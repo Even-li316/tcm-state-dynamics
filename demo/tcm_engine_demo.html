@@ -1,0 +1,1994 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>中医状态动力学推演引擎 · 病案推演 · 沙盘推演 v0.4（可交互状态场）</title>
+<style>
+  :root{--bg:#0b0f14;--panel:#121922;--line:#1f2a37;--txt:#e6edf3;--dim:#8b98a5;
+        --hot:#ff7a18;--cool:#1fb6ff;--good:#2ecc71;--bad:#ff4d5e;--warn:#f5c451;}
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(1200px 700px at 70% -10%,#15202b 0%,#0b0f14 55%);
+       color:var(--txt);font:14px/1.5 -apple-system,"PingFang SC","Microsoft YaHei",sans-serif}
+  header{display:flex;align-items:baseline;gap:14px;padding:18px 24px 8px}
+  h1{font-size:21px;margin:0;letter-spacing:.5px}
+  header .sub{color:var(--dim);font-size:12.5px}
+  .badge{margin-left:auto;font-size:12px;color:var(--warn);border:1px solid #3a2f13;
+         background:#241d0e;border-radius:999px;padding:4px 10px}
+  .wrap{display:grid;grid-template-columns:300px 1fr 380px;gap:16px;padding:8px 24px 24px}
+  .card{background:linear-gradient(180deg,#131b25,#101720);border:1px solid var(--line);
+        border-radius:14px;padding:14px 16px;box-shadow:0 8px 24px rgba(0,0,0,.35)}
+  .card h2{font-size:13px;margin:0 0 10px;color:var(--dim);font-weight:600;letter-spacing:.8px}
+  .row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+  button{background:#1a2531;color:var(--txt);border:1px solid #26333f;border-radius:9px;
+         padding:6px 10px;font-size:12.5px;cursor:pointer;transition:.15s}
+  button:hover{border-color:var(--hot);color:#ffd7b0}
+  button.on{background:linear-gradient(180deg,#ff8a2b,#ff6a00);border-color:#ff7a18;color:#1a1006;font-weight:700}
+  .slider{display:grid;grid-template-columns:44px 1fr 40px;align-items:center;gap:8px;margin:5px 0}
+  .slider label{font-size:13px}
+  .slider output{font-size:12px;color:var(--dim);text-align:right}
+  input[type=range]{-webkit-appearance:none;height:4px;background:#25313d;border-radius:2px;outline:none}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;
+      background:var(--hot);box-shadow:0 0 10px rgba(255,122,24,.8);cursor:pointer}
+  .ctrl{display:flex;gap:8px;margin-top:10px}
+  .ctrl button{flex:1;padding:9px}
+  .verdict{font-size:26px;font-weight:800;letter-spacing:1px;margin:2px 0 6px}
+  .small{font-size:12px;color:var(--dim)}
+  .kpi{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px}
+  .kpi div{background:#0d141c;border:1px solid #1b2430;border-radius:10px;padding:8px 10px}
+  .kpi b{display:block;font-size:18px}
+  footer{padding:0 24px 26px;color:var(--dim);font-size:11.5px}
+  .bar{height:12px;border-radius:3px;margin:3px 0;background:#0d141c;overflow:hidden;display:flex}
+  .seg{height:100%}
+  .legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--dim);margin-top:4px}
+  .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px}
+  /* ================= v0.2：盲测模式（病案推演 · 教学演练） ================= */
+  .badge{margin-left:0}
+  .modeswitch{display:flex;flex-wrap:wrap;gap:8px;margin-left:auto;align-items:center}
+  .modeswitch button{padding:8px 12px;font-size:13px}
+  #dataCount{background:#101a24;color:var(--warn);border-style:dashed}
+  #blindWrap{display:none;padding:8px 24px 96px}
+  #blindWrap .card{margin-bottom:14px}
+  .bstep{font-size:12.5px;color:var(--warn);letter-spacing:.6px;margin:0 0 8px}
+  .bcase{font-size:17px;font-weight:700;margin:0 0 6px}
+  .bdesc{font-size:13.5px;color:#c6d2dd;margin:0;line-height:1.7}
+  .bopts{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
+  .bopts button{padding:12px 18px;font-size:15px;border-radius:11px;min-width:160px;text-align:left}
+  .bopts button.sel{background:linear-gradient(180deg,#ff8a2b,#ff6a00);border-color:#ff7a18;color:#1a1006;font-weight:700}
+  .bhit{font-size:15px;font-weight:700;margin:10px 0 6px}
+  .bbranch{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px}
+  .bbranch div{background:#0d141c;border:1px solid #1b2430;border-radius:10px;padding:8px 10px}
+  .bbranch b{display:block;font-size:17px}
+  textarea{width:100%;max-width:560px;background:#0d141c;color:var(--txt);border:1px solid #1b2430;
+           border-radius:9px;padding:8px;font:13px/1.5 inherit;resize:vertical;margin-top:6px}
+  .compliance{position:fixed;left:0;right:0;bottom:0;z-index:50;background:rgba(9,13,18,.95);
+      border-top:1px solid #1f2a37;color:#9fb0c0;font-size:12.5px;padding:9px 16px;text-align:center}
+  body{padding-bottom:52px}
+  /* ================= v0.3：沙盘模式（动态推演） ================= */
+  #sandboxWrap{display:none;padding:8px 24px 96px}
+  #sandboxWrap .card{margin-bottom:14px}
+  .sbnote{font-size:12px;color:var(--warn);margin:0 0 9px;line-height:1.65}
+  .sbtwo{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px}
+  .sbtwo>div{background:#0d141c;border:1px solid #1b2430;border-radius:10px;padding:10px}
+  .sbtwo b{display:block;font-size:19px;margin:4px 0 3px}
+  .sbrow{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) minmax(0,1fr) 34px;
+         gap:6px;margin-bottom:6px;align-items:center}
+  .sbrow select{width:100%;min-width:0;background:#0d141c;color:var(--txt);border:1px solid #1b2430;
+                border-radius:8px;padding:6px 4px;font-size:12.5px}
+  .sbrow button{padding:5px 6px;font-size:12.5px}
+  .sbdel{background:#2a1418;border-color:#4a2028;color:#ffb3bd}
+  .sbhtitle{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) minmax(0,1fr) 34px;
+            gap:6px;font-size:11.5px;color:var(--dim);margin-bottom:4px}
+  .numin{width:92px;background:#0d141c;color:var(--txt);border:1px solid #1b2430;border-radius:9px;
+         padding:8px;font:14px inherit}
+  .sbday{font-size:12.5px;color:#c6d2dd;line-height:2.05}
+  .sbday b{color:#fff}
+  .sbdiff{font-size:14.5px;font-weight:700;color:var(--warn);margin:10px 0 4px;line-height:1.6}
+  /* ================= v0.4：沙盘 · 可交互状态场 ================= */
+  .fldgrid{display:grid;grid-template-columns:minmax(0,500px) minmax(0,1fr);gap:14px;align-items:start;margin-top:10px}
+  .fldbox{position:relative;border:1px solid #1b2430;border-radius:12px;overflow:hidden;background:#080c11}
+  #sbField{display:block;width:100%;height:auto;touch-action:none;cursor:crosshair;user-select:none;-webkit-user-select:none}
+  .fldhint{font-size:11px;color:#8493a2;background:#0b1118;border-top:1px solid #1b2430;
+           padding:5px 9px;line-height:1.55;pointer-events:none}
+  .fldhint .dim2{color:#63717f}
+  .fldbars::before{content:"六气带量（状态）";font-size:11px;color:#63717f;letter-spacing:.5px;grid-column:1/-1}
+  .fldbar.nil{opacity:.55}
+  .fldpanel{display:flex;flex-direction:column;gap:8px;min-width:0}
+  .fldline{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .fldline .lbl{font-size:12px;color:var(--dim);min-width:52px}
+  .fldline .row{margin:0}
+  .fldstrength{display:grid;grid-template-columns:1fr 44px;align-items:center;gap:8px;flex:1;min-width:0}
+  #sbFieldStrength{width:100%}
+  #sbFieldLabel{font-size:19px;font-weight:800;letter-spacing:.4px;color:#ffd7b0;line-height:1.35}
+  #sbFieldMech{font-size:12.5px;color:#a9b8c6;line-height:1.6}
+  #sbFieldRead{font-size:12.5px;color:#c6d2dd;line-height:1.7;background:#0d141c;border:1px solid #1b2430;
+               border-radius:9px;padding:7px 9px;word-break:break-word}
+  #sbFieldStats{font-size:11.5px;color:var(--dim);line-height:1.75;word-break:break-word}
+  .fldbars{display:grid;grid-template-columns:1fr 1fr;gap:3px 14px;margin:1px 0 0}
+  .fldbar{display:grid;grid-template-columns:15px 1fr 30px;align-items:center;gap:6px;font-size:11.5px;color:#8b98a5}
+  .fldbar i{display:block;height:5px;background:#161f2a;border-radius:3px;overflow:hidden}
+  .fldbar i b{display:block;height:100%;width:0;border-radius:3px}
+  .fldbar .v{text-align:right;font-variant-numeric:tabular-nums}
+  .fldbar.cur{color:#ffd7b0}
+  .kv{display:flex;flex-wrap:wrap;align-items:baseline;gap:1px 8px;line-height:1.62}
+  .kv span{font-size:11.5px;color:#8b98a5}
+  .kv b{font-size:13px;color:#e6edf3;font-weight:700}
+  @media (max-width:860px){
+    .fldgrid{grid-template-columns:1fr;gap:10px}
+    .fldbox{max-width:300px;margin:0 auto;width:100%}
+    #sbFieldLabel{font-size:17px}
+    .fldline{gap:6px}
+    .fldline .lbl{min-width:40px;font-size:11.5px}
+    #sbFieldDir button,#sbFieldAxis button{padding:9px 11px;font-size:14px;min-width:42px}
+    #sbFieldRead,#sbFieldStats{font-size:12px}
+  }
+  @media (max-width:860px){
+    header{flex-wrap:wrap;gap:6px;padding:14px 14px 6px}
+    h1{font-size:17.5px;line-height:1.35}
+    header .sub{font-size:11px}
+    .wrap{grid-template-columns:1fr}
+    #blindWrap{padding:8px 14px 104px}
+    .bopts button{min-width:100%;font-size:16.5px;padding:15px 16px}
+    .bbranch{grid-template-columns:1fr}
+    button{font-size:14px;padding:9px 12px}
+    .ctrl button{padding:13px;font-size:15px}
+    .modeswitch{margin-left:0;width:100%}
+    .modeswitch button{flex:1;min-width:44%;padding:11px 8px}
+    footer{padding:0 14px 26px}
+    .compliance{font-size:11.5px;padding:8px 10px}
+    #sandboxWrap{padding:8px 14px 104px}
+    .sbtwo{grid-template-columns:1fr}
+    .sbrow{grid-template-columns:minmax(0,1.35fr) minmax(0,0.95fr) minmax(0,0.95fr) 40px;gap:5px}
+    .sbrow select{font-size:14px;padding:9px 3px}
+    .sbrow button{padding:9px 6px;font-size:14px}
+    .numin{width:78px;font-size:16px;padding:9px 6px}
+    .sbday{font-size:13.5px}
+    .sbdiff{font-size:14px}
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>中医状态动力学推演引擎 · 病案推演 · 教学演练</h1>
+  <div class="sub">TCM State-Dynamics Inference Engine · v0.4（演示模式 + 盲测模式 + 沙盘模式 · 可交互状态场 × 带量患者 × 加减开方 × 按天轨迹）</div>
+  <div class="badge">参数未经标定｜数值为无量纲相对量</div>
+  <div class="modeswitch">
+    <button id="modeDemo" class="on">演示模式</button>
+    <button id="modeBlind">盲测模式 · 病案推演 教学演练</button>
+    <button id="modeSandbox">沙盘模式 · 动态推演</button>
+    <button id="dataCount" title="仅存本机浏览器，未联网">已收集 0 条</button>
+    <button id="exportBtn">导出 JSON</button>
+  </div>
+</header>
+
+<div class="wrap" id="demoWrap">
+  <!-- 左：输入 -->
+  <div class="card">
+    <h2>① 状态（证候 · 六气失衡）</h2>
+    <div class="row" id="caseRow"></div>
+    <div id="sliders"></div>
+
+    <h2 style="margin-top:14px">② 算子（方剂 · 性味归经 × 剂型）</h2>
+    <div class="row" id="formulaRow"></div>
+    <div class="row" id="formRow" style="color:var(--dim);font-size:12.5px"></div>
+    <div class="row" id="doseRow"></div>
+
+    <div class="ctrl">
+      <button id="play">▶ 开始推演</button>
+      <button id="reset">↺ 重置</button>
+    </div>
+  </div>
+
+  <!-- 中：雷达 -->
+  <div class="card">
+    <h2>③ 状态空间（六气 · 实时）</h2>
+    <svg id="radar" viewBox="-160 -160 320 320" style="width:100%;height:auto"></svg>
+    <div class="legend">
+      <span><i class="dot" style="background:#2ecc71"></i>阴平阳秘（基线）</span>
+      <span><i class="dot" style="background:#ff4d5e"></i>证候（起点）</span>
+      <span><i class="dot" style="background:#1fb6ff"></i>当前状态</span>
+      <span><i class="dot" style="background:#f5c451"></i>方剂净向量</span>
+    </div>
+  </div>
+
+  <!-- 右：轨迹与判定 -->
+  <div class="card">
+    <h2>④ 推演（能量失衡度轨迹）</h2>
+    <div class="verdict" id="verdict" style="color:var(--dim)">待推演</div>
+    <div class="small" id="verdictSub">选择证候与方剂后点「开始推演」</div>
+    <canvas id="chart" width="740" height="320" style="width:100%;height:auto;margin-top:8px"></canvas>
+    <div class="kpi">
+      <div><span class="small">失衡度 起始 → 当前</span><b id="kpiE">-</b></div>
+      <div><span class="small">已推演时间</span><b id="kpiT">0.0</b></div>
+    </div>
+    <h2 style="margin-top:14px">⑤ 药物偏性在六气上的叠加</h2>
+    <div id="drugBars"></div>
+  </div>
+</div>
+
+<!-- ================= v0.2：盲测模式「病案推演 · 教学演练」（先选后揭） =================
+     本版仅使用现有四个证候，不新增病例；方名 / 对证与误治标签 / 结局 在提交前一律不进入页面文本 -->
+<div id="blindWrap">
+  <div class="card">
+    <h2>病案 · 第一步：证候（方名与结局已隐藏）</h2>
+    <div class="bstep" id="bStepLabel">第 1 步 · 请选择你认为更合适的候选方</div>
+    <div class="bcase" id="bCaseTitle">—</div>
+    <p class="bdesc" id="bCaseDesc"></p>
+    <div class="bopts" id="bCandRow"></div>
+  </div>
+
+  <div class="card" id="bPredictCard" style="display:none">
+    <h2>第 2 步 · 预测结局（三选一）</h2>
+    <div class="small">按你对所选候选方的判断，预测该证候推演结束时的结局：</div>
+    <div class="bopts" id="bPredRow"></div>
+  </div>
+
+  <div class="card" id="bQuizCard" style="display:none">
+    <h2>第 3 步 · 边界共识问答（二元标注）</h2>
+    <div class="bstep" id="bQuizRule"></div>
+    <p class="bdesc" id="bQuizQ"></p>
+    <div class="bopts" id="bQuizRow"></div>
+  </div>
+
+  <div class="card" id="bSubmitCard" style="display:none">
+    <div class="small">补充（可留空）：你为什么这样选？</div>
+    <textarea id="bWhy" rows="2" placeholder="可留空"></textarea>
+    <div class="ctrl" style="max-width:520px">
+      <button id="bSubmit" disabled>提交并揭示</button>
+      <button id="bNext">换一证候</button>
+    </div>
+    <div class="small" id="bSubmitHint" style="margin-top:8px">提交后才会揭示三分支轨迹与三档判定（先选后揭）。仅使用现有四个证候，不新增病例。</div>
+  </div>
+
+  <div class="card" id="bRevealCard" style="display:none">
+    <h2>④ 揭示：三分支轨迹与三档判定</h2>
+    <canvas id="bChart" width="1000" height="340" style="width:100%;height:auto"></canvas>
+    <div class="legend" id="bLegend"></div>
+    <div class="bhit" id="bHit"></div>
+    <div class="bbranch" id="bBranch"></div>
+    <div class="small" id="bVerdictNote" style="margin-top:8px"></div>
+  </div>
+</div>
+
+<!-- ================= v0.3：沙盘模式「动态推演」（带量患者 ＋ 加减开方含量档 ＋ 按天轨迹 ＋ 先写预期再揭示） =================
+     与演示模式、盲测模式并列；三者互不干扰。引擎侧唯一新增能力 = 方剂角色权重 × 量档。
+     量档系数与剂型时间常数均为手工设定、未经标定。 -->
+<div id="sandboxWrap">
+  <div class="card">
+    <h2>① 患者面板 · 六气带量（0 – 1.5，可任意调）</h2>
+    <p class="sbnote">同一个证型有轻有重、偏寒偏热：先「载入」一个证候作起点，再拖动任意轴，把轻重与偏性调出来（调完即为自定义患者，不再等同于该证候）。</p>
+    <div class="row" id="sbPresetRow"></div>
+    <div id="sbSliders"></div>
+    <div class="small" id="sbE0Read" style="margin-top:6px"></div>
+  </div>
+
+  <div class="card" id="sbFieldCard">
+    <h2>② 状态场 · 可交互（64×64 网格 · 每帧重解方程）</h2>
+    <p class="sbnote">场是算出来的：六通道「阻尼波动–反应–扩散」方程在 64×64 网格上逐帧显式积分，源项＝当前六气带量（六个气域），边界＝随状态变动的体表，通道间传变直接复用引擎 Msrc 原系数。<b>拖动＝施治</b>：落点决定作用部位（落点处该气强度决定有效剂量），力度 × 时长 ＝ 剂量；松手后场的扰动按自愈项衰减，收敛后写回患者状态。</p>
+    <div class="fldgrid">
+      <div class="fldbox">
+        <canvas id="sbField" width="512" height="512"></canvas>
+        <div class="fldhint">按住拖动 · 松手收敛并写回　｜　域内数字＝该气带量，等值线＝每帧解出的场强</div>
+      </div>
+      <div class="fldpanel">
+        <div class="fldline"><span class="lbl">手法</span><div class="row" id="sbFieldDir"></div></div>
+        <div class="fldline"><span class="lbl">气</span><div class="row" id="sbFieldAxis"></div></div>
+        <div class="fldline"><span class="lbl">力度</span>
+          <div class="fldstrength">
+            <input type="range" id="sbFieldStrength" min="0.2" max="2" step="0.1" value="1">
+            <output id="sbFieldStrengthOut">×1.0</output>
+          </div>
+        </div>
+        <div id="sbFieldLabel">—</div>
+        <div id="sbFieldMech"></div>
+        <div id="sbFieldRead"></div>
+        <div id="sbFieldBars" class="fldbars"></div>
+        <div class="row" style="margin:4px 0 0"><button id="sbFieldReset">↺ 场复位</button><button id="sbFieldSettle">⇢ 立即收敛并写回</button></div>
+      </div>
+    </div>
+    <div id="sbFieldStats" style="margin-top:8px"></div>
+    <div class="small" style="margin-top:6px">写回口径：松手后场收敛（振荡 vmax 落回静止），本次剂量积分一次性写入 E0；同一手法同时留下方外药力（泻 → netEff，补 → tonic），进入原有 10 天轨迹与结局判定。场层换算系数（KB / KBc / KN / KT / KF）为手工设定、未经标定，不参与 R1–R4。</div>
+  </div>
+
+  <div class="card">
+    <h2>③ 开方面板 · 加减 ＋ 角色 ＋ 量档</h2>
+    <p class="sbnote">量档＝角色权重（君 1.0／臣 0.6／佐 0.4／使 0.25）× 量档系数 0.5 – 2.0｜<b>量档与剂型系数为手工设定、未经标定</b>。</p>
+    <div class="row" id="sbBaseRow"></div>
+    <div class="sbhtitle"><span>药味（现有药库）</span><span>角色</span><span>量档</span><span>删</span></div>
+    <div id="sbHerbList"></div>
+    <div class="ctrl" style="max-width:340px"><button id="sbAdd">＋ 加一味（加减）</button></div>
+    <h2 style="margin-top:14px">④ 剂型（动力学时间常数）与疗程（剂数）</h2>
+    <div class="row" id="sbFormRow"></div>
+    <div class="row" style="align-items:center">
+      <span class="small">疗程（剂数）</span><input class="numin" id="sbCourse" type="number" min="1" max="30" step="1" value="5">
+      <span class="small">推演固定 10 天（T 解释为「天」）</span>
+    </div>
+    <div class="small" id="sbFormulaRead" style="margin-top:6px"></div>
+  </div>
+
+  <div class="card">
+    <h2>⑤ 先写下你的临床经验预期（揭示之前）</h2>
+    <p class="sbnote">别看引擎结果，先写下你的判断。提交后才是引擎轨迹与你的预期并排对照，并标出「差异最大的时点」——差异集中处往往提示还有别的因素（兼夹证、合并病）。</p>
+    <div class="row" style="align-items:center">
+      <span class="small">预计几天减半</span><input class="numin" id="sbHalf" type="number" min="0.5" max="60" step="0.5" placeholder="如 3">
+      <span class="small">天</span>
+    </div>
+    <div class="row" style="align-items:center">
+      <span class="small">预计几天基本恢复</span><input class="numin" id="sbRecover" type="number" min="1" max="60" step="0.5" placeholder="如 7">
+      <span class="small">天（须大于减半天数）</span>
+    </div>
+    <div class="small">补充（可留空）：这个方你还想加什么、减什么？</div>
+    <textarea id="sbWhy" rows="2" placeholder="可留空"></textarea>
+    <div class="ctrl" style="max-width:560px">
+      <button id="sbSubmit">推演并对照揭示</button>
+      <button id="sbExport">导出沙盘 JSON</button>
+      <button id="sbReset">↺ 清空沙盘记录</button>
+    </div>
+    <div class="small" id="sbHint" style="margin-top:8px">提示：未提交前不显示轨迹与判定。本模式沿用同一套 R1–R4 与六气映射系数；量档是新增加减能力。</div>
+  </div>
+
+  <div class="card" id="sbRevealCard" style="display:none">
+    <h2>⑥ 揭示：引擎轨迹 vs 你的经验预期（横轴 ＝ 天）</h2>
+    <canvas id="sbChart" width="1040" height="380" style="width:100%;height:auto"></canvas>
+    <div class="legend">
+      <span><i class="dot" style="background:#1fb6ff"></i>引擎推演（本沙盘方）</span>
+      <span><i class="dot" style="background:#f5c451"></i>你的预期（连线）</span>
+      <span><i class="dot" style="background:#ff4d5e"></i>差异最大时点</span>
+    </div>
+    <div class="sbtwo">
+      <div><span class="small">引擎推演</span><b id="sbEngineKpi">-</b><span class="small" id="sbEngineSub"></span></div>
+      <div><span class="small">你的预期</span><b id="sbExpectKpi">-</b><span class="small" id="sbExpectSub"></span></div>
+    </div>
+    <div class="sbdiff" id="sbDiffNote"></div>
+    <h2 style="margin-top:12px">⑦ 按天读数（残余失衡比 ＝ |E(t)| / |E(0)|）</h2>
+    <div class="sbday" id="sbDayTable"></div>
+    <div class="small" id="sbVerdictNote" style="margin-top:6px"></div>
+  </div>
+</div>
+
+<footer id="ruleFooter">规则：R1 病去药止（药力按病势门控）｜R2 误治助邪（药病同向→传变×1.8、自愈×0.5）｜R3 寒凉抑遏｜R4 暑火盛忌辛温。剂型＝动力学时间常数（汤1.0/散1.5/丸4.0/膏6.0/丹3.0）。沙盘量档＝角色权重×量档系数（君1.0/臣0.6/佐0.4/使0.25 × 0.5–2.0，手工设定、未经标定）。沙盘 v0.4 状态场＝六通道「阻尼波动–反应–扩散」方程在 64×64 网格上逐帧显式积分（源项＝当前六气带量，边界＝随状态变动的体表，通道传变复用上列 Msrc 系数 × 场层系数 KF）；场层换算系数 KB/KBc/KN/KT/KF 手工设定、未经标定，不参与 R1–R4 判定。</footer>
+<div class="compliance">本工具仅用于研究与教学演示，输出为无量纲相对量，不构成诊疗建议。</div>
+
+<script>
+/* ========== 六气状态动力学（与 Python 版同一套规则） ========== */
+const AXES = ["风","寒","暑","湿","燥","火"];
+const QI = {"寒":-2,"凉":-1,"平":0,"温":1,"热":2};
+const AROMATIC = new Set(["藿香","紫苏","白芷","苍术","砂仁","厚朴","陈皮","佩兰"]);
+const D = {
+ "麻黄":["温","辛","肺膀胱",1.3], "桂枝":["温","辛甘","心肺膀胱",1.1], "杏仁":["温","苦","肺大肠",0.8],
+ "甘草":["平","甘","十二经",0.7], "白芍":["凉","酸苦","肝脾",0.9], "生姜":["温","辛","肺脾胃",0.8],
+ "大枣":["温","甘","脾胃",0.6], "石膏":["寒","辛甘","肺胃",1.5], "知母":["寒","苦甘","肺胃肾",1.1],
+ "粳米":["平","甘","脾胃",0.4], "黄连":["寒","苦","心肝胃",1.3], "黄芩":["寒","苦","肺胆",1.2],
+ "黄柏":["寒","苦","肾膀胱",1.1], "大黄":["寒","苦","脾胃大肠",1.4], "芒硝":["寒","咸苦","胃大肠",1.1],
+ "附子":["热","辛甘","心肾脾",1.6], "干姜":["热","辛","脾胃",1.3], "半夏":["温","辛","脾胃肺",1.0],
+ "茯苓":["平","甘淡","心脾肾",0.8], "白术":["温","苦甘","脾胃",0.9], "泽泻":["寒","甘淡","肾膀胱",0.9],
+ "猪苓":["平","甘淡","肾膀胱",0.8], "滑石":["寒","甘淡","膀胱",0.9], "藿香":["温","辛","脾胃肺",1.0],
+ "紫苏":["温","辛","肺脾",0.9], "白芷":["温","辛","肺胃",0.9], "厚朴":["温","苦辛","脾胃肺",1.0],
+ "苍术":["温","苦辛","脾胃",1.0], "砂仁":["温","辛","脾胃肾",0.8], "柴胡":["凉","辛苦","肝胆",1.1],
+ "薄荷":["凉","辛","肺肝",0.8], "连翘":["寒","苦","心肺胆",1.0], "人参":["温","甘","脾肺",1.2],
+ "黄芪":["温","甘","脾肺",1.1], "熟地":["温","甘","肝肾",1.2], "山茱萸":["温","酸","肝肾",0.9],
+ "山药":["平","甘","脾肺肾",0.7], "丹皮":["凉","苦辛","心肝肾",0.8], "麦冬":["寒","甘苦","心肺胃",0.9],
+ "生地":["寒","甘苦","心肝肾",1.1], "五味子":["温","酸","肺肾心",0.8], "当归":["温","甘辛","肝心脾",1.0],
+ "川芎":["温","辛","肝胆心包",1.0], "桔梗":["平","苦辛","肺",0.7]
+};
+function drugVec(name){
+  const [qi,wei,,pot] = D[name]; const q = QI[qi];
+  const xin=wei.includes("辛")?1:0, ku=wei.includes("苦")?1:0, gan=wei.includes("甘")?1:0,
+        suan=wei.includes("酸")?1:0, xian=wei.includes("咸")?1:0, dan=wei.includes("淡")?1:0, se=wei.includes("涩")?1:0;
+  const v=[0,0,0,0,0,0];
+  v[1] = -0.45*Math.max(q,0);
+  const fire = 0.45*Math.min(q,0);
+  v[5] = fire; v[2] = 0.6*fire;
+  v[0] = -0.40*xin;
+  v[3] = -0.35*ku -0.55*dan -0.25*(xin*ku) -0.30*(AROMATIC.has(name)?1:0) +0.15*(suan+se);
+  v[4] = 0.20*ku -0.40*xian -0.25*(gan*(q<0?1:0));
+  return {v, pot:pot, gan:gan, warm: Math.max(q,0)*xin};
+}
+const W = {"君":1.0,"臣":0.6,"佐":0.4,"使":0.25};
+/* v0.3 沙盘：net_formula 的角色权重可再乘一个「量档系数」（第三元素；缺省 = 1.0，
+   既有二元素调用 [药名,角色] 的数值行为逐位不变）。除此之外 R1–R4、药库、六气映射系数均未改动。 */
+function formulaNet(list){
+  const net=[0,0,0,0,0,0]; let tonic=0, warm=0; const parts=[];
+  list.forEach(([nm,role,mult])=>{
+    const m = (typeof mult==="number" && isFinite(mult) && mult>0)? mult : 1.0;
+    const wr = W[role]*m, d=drugVec(nm), w=wr*d.pot;
+    for(let i=0;i<6;i++) net[i]+=w*d.v[i];
+    tonic += wr*d.gan*0.05; warm += w*d.warm; parts.push({nm,role,w,d,mult:m}); });
+  return {net, tonic:Math.min(tonic,0.25), warm, parts};
+}
+const CASES = {
+ "风寒表实":{E:[0.8,0.9,0,0,0,0], good:[["麻黄","君"],["桂枝","臣"],["杏仁","佐"],["甘草","使"]], bad:[["石膏","君"],["知母","臣"],["粳米","佐"]]},
+ "暑湿困脾":{E:[0.2,0.2,0.6,1.0,0,0.1], good:[["藿香","君"],["紫苏","臣"],["厚朴","臣"],["滑石","佐"],["茯苓","佐"],["白术","佐"],["甘草","使"]], bad:[["附子","君"],["干姜","臣"],["甘草","使"]]},
+ "阴虚火旺":{E:[0,0,0,0,0.5,0.8], good:[["生地","君"],["麦冬","臣"],["知母","佐"],["丹皮","佐"],["茯苓","使"]], bad:[["干姜","君"],["桂枝","臣"],["甘草","使"]]},
+ "寒厥（少阴）":{E:[0,1.3,0,0.2,0,0], good:[["附子","君"],["干姜","臣"],["甘草","使"]], bad:[["黄连","君"],["黄芩","臣"],["大黄","佐"]]}
+};
+const FORMS = {"汤":1.0,"散":1.5,"丸":4.0,"膏":6.0,"丹":3.0};
+const Msrc=[["风","火",0.10],["火","燥",0.08],["燥","火",0.04],["湿","寒",0.06],["寒","湿",0.04],["暑","湿",0.07],["火","风",0.03]];
+const ix = a=>AXES.indexOf(a);
+function makeM(scale){ const M=[]; for(let i=0;i<6;i++) M.push([0,0,0,0,0,0]);
+  Msrc.forEach(([s,t,c])=>{ M[ix(s)][ix(t)] = c*scale; }); return M; }
+
+/* ========== 状态 ========== */
+let E=[0,0,0,0,0,0], E0=[0,0,0,0,0,0];
+let net=[0,0,0,0,0,0], netEff=[0,0,0,0,0,0], tonic=0, warm=0, parts=[];
+let form="汤", playing=false, t=0, history=[], lastT=0;
+let curCase="风寒表实", curForm="麻黄汤", useBad=false, alpha=1.1, T_dose=1.0, nDose=999, dt=0.02;
+
+/* ========== 界面 ========== */
+const caseRow=document.getElementById("caseRow"), sliders=document.getElementById("sliders"),
+      formulaRow=document.getElementById("formulaRow"), formRow=document.getElementById("formRow"),
+      doseRow=document.getElementById("doseRow"), drugBars=document.getElementById("drugBars");
+Object.keys(CASES).forEach(k=>{ const b=document.createElement("button"); b.textContent=k;
+  b.onclick=()=>{ curCase=k; useBad=false; setCase(); }; caseRow.appendChild(b); });
+["对证方","误治反例"].forEach((lbl,i)=>{ const b=document.createElement("button"); b.textContent=lbl;
+  b.onclick=()=>{ useBad = (i===1); setCase(); }; formulaRow.appendChild(b); });
+Object.keys(FORMS).forEach(f=>{ const b=document.createElement("button"); b.textContent="剂型·"+f;
+  b.onclick=()=>{ form=f; applyFormula(); }; doseRow.appendChild(b); });
+AXES.forEach((a,i)=>{ const d=document.createElement("div"); d.className="slider";
+  d.innerHTML=`<label>${a}</label><input type="range" min="-3" max="3" step="0.1" value="0"><output>0.0</output>`;
+  sliders.appendChild(d);
+  d.querySelector("input").oninput=e=>{ E[i]=parseFloat(e.target.value); E0=E.slice();
+    d.querySelector("output").textContent=E[i].toFixed(1); draw(); }; });
+
+function syncSliders(){ sliders.querySelectorAll("input").forEach((el,i)=>{ el.value=E[i]; 
+  sliders.querySelectorAll("output")[i].textContent=E[i].toFixed(1); }); }
+function setCase(){ const c=CASES[curCase]; E0=c.E.slice();
+  const f = useBad?c.bad:c.good; curForm = useBad? "误治反例": f[0][0]+"为主";
+  netData = formulaNet(f); net=netData.net; tonic=netData.tonic; warm=netData.warm; parts=netData.parts;
+  applyFormula(); }
+let netData=null;
+/* R3 净向量修正（寒凉抑遏）：演示模式与盲测三分支共用同一处实现，避免规则副本漂移 */
+function netEffOf(netVec, E0vec){
+  const v = netVec.slice();
+  if(E0vec[1]>0.3 && v[5]<-0.3){ v[1]+=0.35*Math.abs(v[5]); v[3]+=0.15*Math.abs(v[5]); }
+  return v;
+}
+function applyFormula(){
+  const c=CASES[curCase]; const f = useBad?c.bad:c.good;
+  netData = formulaNet(f); net=netData.net; tonic=netData.tonic; warm=netData.warm; parts=netData.parts;
+  netEff = netEffOf(net, E0);
+  resetSim();
+  formRow.innerHTML = `方：${f.map(x=>x[0]+"("+x[1]+")").join(" · ")} ｜ 剂型：${form}（时间常数 ${FORMS[form]}）`;
+  renderDrugBars(); syncSliders();
+}
+function resetSim(){ E=E0.slice(); t=0; history=[[1,...E]]; playing=false;
+  document.getElementById("play").textContent="▶ 开始推演"; draw(); drawChart(); }
+
+function step(dt){
+  const sameDir = (net[0]*E0[0]+net[1]*E0[1]+net[2]*E0[2]+net[3]*E0[3]+net[4]*E0[4]+net[5]*E0[5])>0;
+  const M = makeM(sameDir?1.8:1.0);
+  const k0 = ((0.05+tonic)*(sameDir?0.5:1.0));
+  // 服药脉冲（每 T_dose 一剂，按剂型时间常数衰减）
+  let drug=0; for(let k=0; k*T_dose<=t && k<nDose; k++) drug += Math.exp(-(t-k*T_dose)/FORMS[form]);
+  const MxE=[0,0,0,0,0,0];
+  for(let i=0;i<6;i++){ let s=0; for(let j=0;j<6;j++) s += M[i][j]*E[j]; MxE[i]=s; }
+  const dE=[0,0,0,0,0,0];
+  for(let i=0;i<6;i++) dE[i] = -k0*E[i] + MxE[i];
+  if(E[2]+E[5] > 0.3) dE[5] += 0.20*warm*drug*Math.min(1,Math.max(0,E[5]+E[2])/0.3);
+  for(let i=0;i<6;i++){
+    const f = alpha*drug*netEff[i];
+    const g = Math.min(1, Math.max(0, E[i])/0.15);
+    dE[i] += (f<0) ? f*g : f*g/(1+Math.max(0,E[i]));
+  }
+  for(let i=0;i<6;i++){ E[i] = Math.max(-3, Math.min(3, E[i]+dt*dE[i])); }
+  t += dt;
+}
+
+/* ========== 雷达 ========== */
+const svg=document.getElementById("radar"), NS="http://www.w3.org/2000/svg";
+function poly(vals, r0){ const r=r0/3; return vals.map((v,i)=>{ const a=-Math.PI/2 + i*Math.PI/3;
+  return [Math.cos(a)*v*r, Math.sin(a)*v*r]; }); }
+function pathFrom(pts){ return pts.map((p,i)=>(i?"L":"M")+p[0].toFixed(1)+","+p[1].toFixed(1)).join("")+"Z"; }
+(function buildRadarStatic(){
+  for(let ring=1; ring<=3; ring++){ const c=document.createElementNS(NS,"circle");
+    c.setAttribute("r", ring*40); c.setAttribute("fill","none"); c.setAttribute("stroke","#1f2a37"); svg.appendChild(c); }
+  AXES.forEach((a,i)=>{ const ang=-Math.PI/2+i*Math.PI/3;
+    const l=document.createElementNS(NS,"line"); l.setAttribute("x1",0); l.setAttribute("y1",0);
+    l.setAttribute("x2",Math.cos(ang)*126); l.setAttribute("y2",Math.sin(ang)*126);
+    l.setAttribute("stroke","#243040"); svg.appendChild(l);
+    const tx=document.createElementNS(NS,"text"); tx.setAttribute("x",Math.cos(ang)*142-7);
+    tx.setAttribute("y",Math.sin(ang)*142+6); tx.setAttribute("fill","#9fb0c0"); tx.setAttribute("font-size","15");
+    tx.textContent=a; svg.appendChild(tx); });
+})();
+const pBase=document.createElementNS(NS,"path"), pCase=document.createElementNS(NS,"path"),
+      pNow=document.createElementNS(NS,"path"), pDrug=document.createElementNS(NS,"path");
+[[pBase,"#2ecc71",.10],[pCase,"#ff4d5e",.12],[pDrug,"#f5c451",.10],[pNow,"#1fb6ff",.22]].forEach(([p,c,o])=>{
+  p.setAttribute("stroke",c); p.setAttribute("stroke-width","2.4"); p.setAttribute("fill",c);
+  p.setAttribute("fill-opacity",o); svg.appendChild(p); });
+function draw(){ const sc=2.2;
+  pBase.setAttribute("d", pathFrom(poly([0,0,0,0,0,0],120)));
+  pCase.setAttribute("d", pathFrom(poly(E0,120)));
+  pNow.setAttribute("d",  pathFrom(poly(E,120)));
+  pDrug.setAttribute("d", pathFrom(poly(netEff.map(v=>v*sc),120)));
+}
+
+/* ========== 轨迹图 ========== */
+const cv=document.getElementById("chart"), ctx=cv.getContext("2d");
+const colors={};
+function drawChart(){
+  const w=cv.width,h=cv.height; ctx.clearRect(0,0,w,h);
+  ctx.fillStyle="#0d141c"; ctx.fillRect(0,0,w,h);
+  const pad=34, T=Math.max(10, t+0.5);
+  ctx.strokeStyle="#1b2430"; ctx.lineWidth=1;
+  for(let i=0;i<=4;i++){ const y=pad+(h-2*pad)*i/4; ctx.beginPath(); ctx.moveTo(pad,y); ctx.lineTo(w-pad,y); ctx.stroke(); }
+  const maxV=3, X=tt=>pad+(w-2*pad)*(tt/T), Y=v=>h-pad-(h-2*pad)*(v/maxV);
+  history.forEach((row,idx)=>{ const tot=Math.hypot(...row.slice(1));
+    if(idx>0){ ctx.strokeStyle="#1fb6ff"; ctx.lineWidth=2.6; ctx.beginPath();
+      ctx.moveTo(X(history[idx-1][0]),Y(Math.hypot(...history[idx-1].slice(1)))); ctx.lineTo(X(row[0]),Y(tot)); ctx.stroke(); } });
+  ctx.fillStyle="#8b98a5"; ctx.font="12px sans-serif";
+  ctx.fillText("|E| 失衡度", pad+2, 20); ctx.fillText("推演时间 →", w-pad-70, h-8);
+}
+function renderDrugBars(){
+  const scale=1.6; drugBars.innerHTML="";
+  AXES.forEach((a,i)=>{
+    const tot=parts.reduce((s,p)=>s+p.w*p.d.v[i],0);
+    const wpc=Math.min(50,Math.abs(tot)*scale*50);
+    const div=document.createElement("div");
+    div.innerHTML=`<span class="small" style="display:inline-block;width:26px">${a}</span>
+      <span class="bar" style="width:180px;display:inline-flex"><span class="seg" style="width:${wpc*2}%;
+      background:${tot<-0.001?'#1fb6ff':(tot>0.001?'#ff4d5e':'#233040')}"></span></span>
+      <span class="small"> ${tot.toFixed(2)}</span>`;
+    drugBars.appendChild(div);
+  });
+}
+
+/* ========== 主循环 ========== */
+let acc=0, prev=performance.now();
+function loop(now){ acc += (now-prev)/1000; prev=now;
+  if(playing){ let steps=0; while(acc>dt && steps<12){ acc-=dt; step(dt); steps++;
+      if(history.length===0 || t-history[history.length-1][0] >= 0.08) history.push([t,...E]); }
+    update(); }
+  requestAnimationFrame(loop); }
+function update(){
+  draw(); drawChart();
+  const n0=Math.hypot(...E0), n=Math.hypot(...E);
+  document.getElementById("kpiE").textContent = n0.toFixed(2)+" → "+n.toFixed(2);
+  document.getElementById("kpiT").textContent = t.toFixed(1);
+  const r=n/n0, v=document.getElementById("verdict");
+  if(t<0.3){ v.textContent="推演中…"; v.style.color="var(--dim)"; }
+  else if(r<0.4){ v.textContent="收敛 · 好转"; v.style.color="var(--good)"; }
+  else if(r<1.0){ v.textContent="迁延 · 缓解不足"; v.style.color="var(--warn)"; }
+  else { v.textContent="加重 · 误治"; v.style.color="var(--bad)"; }
+  document.getElementById("verdictSub").textContent =
+    `残余失衡比 = ${r.toFixed(3)}（<0.4 收敛｜0.4–1.0 迁延｜>1.0 加重）`;
+}
+document.getElementById("play").onclick=e=>{ playing=!playing;
+  e.target.textContent = playing? "⏸ 暂停":"▶ 继续"; };
+document.getElementById("reset").onclick=()=>{ resetSim(); };
+
+/* 初始化 */
+setCase(); requestAnimationFrame(loop);
+
+/* ============================================================================
+   v0.2 盲测模式「病案推演 · 教学演练」（先选后揭）— 纯前端、离线、不联网
+   规则与六气映射完全沿用上面同一套（未改动 step/映射系数/四条规则）
+   ============================================================================ */
+const BKEY = "tcm_blind_v0_2_20261017";          // localStorage 键名（带日期版本）
+const B_STORE = (function(){
+  try{ localStorage.setItem("__tcm_probe","1"); localStorage.removeItem("__tcm_probe"); return localStorage; }
+  catch(e){ const m={}; return {getItem:k=>(k in m?m[k]:null), setItem:(k,v)=>{m[k]=String(v);}, removeItem:k=>{delete m[k];}}; }
+})();
+const BCASES = ["风寒表实","暑湿困脾","阴虚火旺","寒厥（少阴）"];   // 只用现有四个证候
+const PRED = ["收敛","迁延","加重"];
+const QUIZ = [
+  {rule:"R3 寒凉抑遏", q:"里有寒（寒项明显）时用大剂寒凉药，会反而增加寒与湿——你认同这个判断吗？"},
+  {rule:"R2 误治助邪", q:"当用药方向与病势同向（误治）时，病机传变会被放大、机体自身的自愈趋势会被削弱——你认同吗？"},
+  {rule:"R4 暑火盛忌辛温", q:"当暑、火两项明显偏盛时再用辛温发散类药物，火项会被推得更高——你认同吗？"},
+  {rule:"R1 病去药止", q:"失衡已基本消退后仍按原剂量继续服药，药力会随病势减弱而被门控、不会持续叠加——你认同吗？"}
+];
+const bEl = id=>document.getElementById(id);
+let bState = {stage:"idle", caseIdx:0, caseName:BCASES[0], slots:{A:"good",B:"bad"},
+              choice:null, predicted:null, quizAns:null, t0:0, elapsed:0, revealed:null};
+
+function bRecords(){ try{ const s=B_STORE.getItem(BKEY); return s? JSON.parse(s):[]; }catch(e){ return []; } }
+function bRenderCount(){ const n=bRecords().length; const el=bEl("dataCount");
+  if(el){ let t="盲测 "+n+" 条"; try{ t += " · 沙盘 "+sbRecords().length+" 条"; }catch(e){ t="已收集 "+n+" 条"; }
+    el.textContent=t; }
+  return n; }
+function bWrite(rec){ const a=bRecords(); a.push(rec); try{ B_STORE.setItem(BKEY, JSON.stringify(a)); }catch(e){} bRenderCount(); return a.length; }
+function bFmt(list){ return list.map(x=>x[0]+"("+x[1]+")").join("·"); }
+function bLabel(kind, c){ return (kind==="good"?"对证方｜":"误治方｜") + bFmt(kind==="good"?c.good:c.bad); }
+function qiDesc(E){                                    // 仅由 CASES 的 E 生成，不编造医案
+  const hi=[], mid=[], low=[], quiet=[];
+  AXES.forEach((a,i)=>{ const v=E[i];
+    if(v>=0.5) hi.push(`${a} ${v.toFixed(2)}`); else if(v>=0.2) mid.push(`${a} ${v.toFixed(2)}`);
+    else if(v<=-0.2) low.push(`${a} ${v.toFixed(2)}`); else quiet.push(a); });
+  const t=[];
+  if(hi.length) t.push("明显偏盛："+hi.join("、"));
+  if(mid.length) t.push("轻度偏高："+mid.join("、"));
+  if(low.length) t.push("偏低："+low.join("、"));
+  if(quiet.length) t.push("未见明显偏移："+quiet.join("、"));
+  return "六气状态（无量纲相对量）：" + t.join("；") + "。";
+}
+function bVerdict(r){ return r<0.4? "收敛" : (r<1.0? "迁延" : "加重"); }
+
+/* 三分支推演：不干扰演示模式的全局状态（跑完原样还原） */
+function runBranch(caseKey, list, formKey, steps){
+  const S={E:E.slice(),E0:E0.slice(),net:net.slice(),netEff:netEff.slice(),tonic:tonic,warm:warm,
+           parts:parts.slice(),form:form,t:t,nDose:nDose,playing:playing,history:history.slice(),curCase:curCase};
+  curCase=caseKey; E0=CASES[caseKey].E.slice();
+  if(list){ const nd=formulaNet(list); net=nd.net.slice(); tonic=nd.tonic; warm=nd.warm; parts=nd.parts; }
+  else { net=[0,0,0,0,0,0]; tonic=0; warm=0; parts=[]; }
+  form=formKey||form; nDose=999; playing=false;
+  netEff = netEffOf(net, E0);                                          // 与 applyFormula 共用 R3 修正
+  E=E0.slice(); t=0; history=[[1,...E]];
+  for(let i=0;i<steps;i++){ step(dt); if(t-history[history.length-1][0]>=0.08) history.push([t,...E]); }
+  const ratio=Math.hypot(...E)/Math.hypot(...E0);
+  const out={E:E.slice(), history:history.map(r=>r.slice()), t:t, ratio:ratio, form:form};
+  curCase=S.curCase; E=S.E; E0=S.E0; net=S.net; netEff=S.netEff; tonic=S.tonic; warm=S.warm;
+  parts=S.parts; form=S.form; t=S.t; nDose=S.nDose; playing=S.playing; history=S.history;
+  return out;
+}
+
+/* ---- 模式切换 ---- */
+let mode="demo";
+function setMode(m){
+  mode = (m==="blind")? "blind" : ((m==="sandbox")? "sandbox" : "demo");
+  bEl("demoWrap").style.display = (mode==="demo")? "" : "none";
+  bEl("blindWrap").style.display = (mode==="blind")? "block" : "none";
+  if(bEl("sandboxWrap")) bEl("sandboxWrap").style.display = (mode==="sandbox")? "block" : "none";
+  // 盲测模式藏规则行：R1–R4 与剂型常数正是边界题（QUIZ）的答案，露在页面上等于给提示、污染作答（2026-10-17 修）
+  // 演示/沙盘模式照常显示（沙盘模式本来就公开使用剂型常数与量档口径）
+  bEl("ruleFooter").style.display = (mode==="blind")? "none" : "";
+  bEl("modeDemo").classList.toggle("on", mode==="demo");
+  bEl("modeBlind").classList.toggle("on", mode==="blind");
+  if(bEl("modeSandbox")) bEl("modeSandbox").classList.toggle("on", mode==="sandbox");
+  if(mode==="blind"){
+    playing=false; bEl("play").textContent="▶ 开始推演";      // 演示仿真暂停
+    bEl("formRow").textContent="";                            // 隐藏侧不留方名文本
+    if(bState.stage==="idle" || bState.stage==="choose") bSetCase(bState.caseIdx);  // 计时从进入盲测算起
+    bRenderCount();
+  } else if(mode==="sandbox"){
+    playing=false; bEl("play").textContent="▶ 开始推演";      // 演示仿真暂停
+    if(!sb.t0) sb.t0=performance.now();                       // 耗时从进入沙盘算起
+    sbRefresh(); bRenderCount();
+  } else { applyFormula(); }                                  // 恢复演示模式（重写方名文本）
+  window.scrollTo(0,0);
+}
+
+/* ---- 流程 ---- */
+function bSetCase(n){
+  let idx = (typeof n==="number")? n : BCASES.indexOf(n);
+  if(!(idx>=0 && idx<BCASES.length)) idx = 0;
+  const name = BCASES[idx], c = CASES[name];
+  bState.caseIdx=idx; bState.caseName=name;
+  bState.slots = (Math.random()<0.5)? {A:"good",B:"bad"} : {A:"bad",B:"good"};   // 甲乙随机顺序
+  bState.choice=null; bState.predicted=null; bState.quizAns=null; bState.revealed=null;
+  bState.stage="choose"; bState.t0=performance.now(); bState.elapsed=0;
+  bEl("bCaseTitle").textContent = `病案 ${idx+1}/4 · 证候：${name}`;
+  bEl("bCaseDesc").textContent = qiDesc(c.E);
+  bEl("bStepLabel").textContent = "第 1 步 · 从两个候选方中选出你认为对该证候更合适的方（不露方名、不露结局）";
+  bEl("bCandRow").innerHTML="";
+  [["甲","A"],["乙","B"]].forEach(([tag,slot])=>{
+    const b=document.createElement("button"); b.id="cand_"+slot; b.dataset.slot=slot;
+    b.textContent="候选"+tag; b.onclick=()=>bChoose(slot); bEl("bCandRow").appendChild(b); });
+  ["bPredictCard","bQuizCard","bSubmitCard","bRevealCard"].forEach(id=>bEl(id).style.display="none");
+  bEl("bWhy").value=""; bEl("bSubmit").disabled=true; bEl("bHit").textContent=""; bEl("bBranch").innerHTML="";
+  bEl("bPredRow").innerHTML=""; bEl("bQuizRow").innerHTML="";
+  return {ok:true, case_no:idx+1, case_name:name};
+}
+function bChoose(id){
+  if(bState.stage!=="choose") return {ok:false, err:"stage="+bState.stage};
+  if(id!=="A" && id!=="B") return {ok:false, err:"id 需为 A/B"};
+  bState.choice=id; bState.stage="predict";
+  bEl("cand_A").classList.toggle("sel", id==="A"); bEl("cand_B").classList.toggle("sel", id==="B");
+  bEl("bStepLabel").textContent="第 1 步已完成 · 你的选方已记录（仍未揭示）";
+  bEl("bPredictCard").style.display="";
+  bEl("bPredRow").innerHTML="";
+  PRED.forEach((t,i)=>{ const b=document.createElement("button"); b.id="pred_"+i; b.textContent=t;
+    b.onclick=()=>bPredict(t); bEl("bPredRow").appendChild(b); });
+  bEl("bSubmit").disabled=true;
+  return {ok:true, choice:id};
+}
+function bPredict(k){
+  if(bState.stage!=="predict" && bState.stage!=="quiz") return {ok:false, err:"stage="+bState.stage};
+  const p = (typeof k==="number")? PRED[k] : String(k);
+  if(PRED.indexOf(p)<0) return {ok:false, err:"predict 需为 收敛/迁延/加重"};
+  bState.predicted=p; bState.stage="quiz";
+  PRED.forEach((t,i)=>bEl("pred_"+i).classList.toggle("sel", t===p));
+  bEl("bStepLabel").textContent="第 2 步已完成 · 你的结局预测已记录（仍未揭示）";
+  const Q = QUIZ[bState.caseIdx % QUIZ.length];
+  bEl("bQuizCard").style.display=""; bEl("bSubmitCard").style.display="";
+  bEl("bQuizRule").textContent="题源：边界定性规则 "+Q.rule+"（仅定性判断，非疗效宣称）";
+  bEl("bQuizQ").textContent=Q.q;
+  bEl("bQuizRow").innerHTML="";
+  ["认同","不认同","说不清"].forEach((t,i)=>{ const b=document.createElement("button"); b.id="quiz_"+i;
+    b.textContent=t; b.onclick=()=>bQuiz(t); bEl("bQuizRow").appendChild(b); });
+  bEl("bSubmit").disabled=true;
+  return {ok:true, predicted:p};
+}
+function bQuiz(a){
+  if(bState.stage!=="quiz") return {ok:false, err:"stage="+bState.stage};
+  const t = (typeof a==="number")? ["认同","不认同","说不清"][a] : String(a);
+  if(["认同","不认同","说不清"].indexOf(t)<0) return {ok:false, err:"answer 需为 认同/不认同/说不清"};
+  bState.quizAns=t;
+  ["认同","不认同","说不清"].forEach((x,i)=>bEl("quiz_"+i).classList.toggle("sel", x===t));
+  bEl("bSubmit").disabled=false;
+  return {ok:true, answer:t};
+}
+function bSubmit(){
+  if(bState.stage==="revealed") return {ok:false, err:"本案例已提交"};
+  if(!bState.choice || !bState.predicted) return {ok:false, err:"需先选方并预测结局"};
+  bState.elapsed = Math.round(performance.now()-bState.t0);
+  const name=bState.caseName, c=CASES[name], Q=QUIZ[bState.caseIdx % QUIZ.length];
+  const br = { good:runBranch(name,c.good,form,500), none:runBranch(name,null,form,500), bad:runBranch(name,c.bad,form,500) };
+  const ratio = { "对证方":br.good.ratio, "不用药":br.none.ratio, "误治方":br.bad.ratio };
+  const verd = { "对证方":bVerdict(ratio["对证方"]), "不用药":bVerdict(ratio["不用药"]), "误治方":bVerdict(ratio["误治方"]) };
+  const chosenKind = bState.slots[bState.choice];
+  const chosenBranch = (chosenKind==="good")? "对证方" : "误治方";
+  const hitFormula = (chosenKind==="good");
+  const hitPredict = (bState.predicted === verd[chosenBranch]);
+  bState.revealed = {ratio:ratio, verdict:verd, chosen_kind:chosenKind, chosen_branch:chosenBranch,
+                     chosen_ratio:ratio[chosenBranch], chosen_verdict:verd[chosenBranch],
+                     hit_formula:hitFormula, hit_prediction:hitPredict, branches:br};
+  const other = (bState.choice==="A")? "乙":"甲";
+  bEl("bHit").innerHTML =
+    `你的选择：候选${bState.choice==="A"?"甲":"乙"} → 实为「${bState.slots[bState.choice]==="good"?"对证方":"误治方"}」　`+
+    `<span style="color:${hitFormula?"var(--good)":"var(--bad)"}">${hitFormula?"选方命中 ✔":"选方未命中 ✘（对证方是候选"+other+"）"}</span><br>`+
+    `你的预测：${bState.predicted} → 实判「${verd[chosenBranch]}」　`+
+    `<span style="color:${hitPredict?"var(--good)":"var(--bad)"}">${hitPredict?"预测命中 ✔":"预测未命中 ✘"}</span>`;
+  bEl("bBranch").innerHTML = ["对证方","不用药","误治方"].map(k=>{
+    const col = verd[k]==="收敛" ? "var(--good)" : (verd[k]==="迁延" ? "var(--warn)" : "var(--bad)");
+    return `<div><span class="small">${k}</span><b style="color:${col}">${verd[k]}</b>`+
+           `<span class="small">残余失衡比 ${ratio[k].toFixed(3)}</span></div>`; }).join("");
+  bEl("bVerdictNote").textContent =
+    `判定门槛：残余失衡比 <0.4 收敛｜0.4–1.0 迁延｜>1.0 加重。你选的方（${chosenBranch}）实测 ${ratio[chosenBranch].toFixed(3)}。`+
+    `对证方＝${bFmt(c.good)}；误治方＝${bFmt(c.bad)}；剂型＝${form}。`;
+  bEl("bLegend").innerHTML =
+    `<span><i class="dot" style="background:#2ecc71"></i>对证方</span><span><i class="dot" style="background:#8b98a5"></i>不用药（仅自愈）</span>`+
+    `<span><i class="dot" style="background:#ff4d5e"></i>误治方</span><span><i class="dot" style="background:#f5c451"></i>虚线＝收敛线(0.4)/加重线(1.0)</span>`;
+  bDrawChart(br, c.E);
+  bEl("bRevealCard").style.display="";
+  bState.stage="revealed";
+  const seq = bRecords().length+1;
+  const rec = {
+    schema:"tcm_blind.v0.2", anon_id:"anon-"+String(seq).padStart(3,"0"), seq:seq,
+    ts:new Date().toISOString(),
+    case_no:bState.caseIdx+1, case_name:name,
+    sixqi:c.E.slice(), sixqi_desc:qiDesc(c.E),
+    candidate_A:bLabel(bState.slots.A,c), candidate_B:bLabel(bState.slots.B,c),
+    choice:bState.choice, choice_kind:chosenKind, choice_branch:chosenBranch,
+    predicted:bState.predicted,
+    quiz_rule:Q.rule, quiz_question:Q.q, quiz_answer:(bState.quizAns||"未作答"),
+    elapsed_ms:bState.elapsed,
+    why:(bEl("bWhy").value||""),
+    ratio_对证方:Number(ratio["对证方"].toFixed(4)), ratio_不用药:Number(ratio["不用药"].toFixed(4)), ratio_误治方:Number(ratio["误治方"].toFixed(4)),
+    verdict_对证方:verd["对证方"], verdict_不用药:verd["不用药"], verdict_误治方:verd["误治方"],
+    hit_formula:hitFormula, hit_prediction:hitPredict, dose_form:form
+  };
+  bWrite(rec);
+  return rec;
+}
+function bExport(){
+  const recs=bRecords();
+  return JSON.stringify({schema:"tcm_blind.v0.2", exported_at:new Date().toISOString(),
+                         count:recs.length, note:"纯前端导出；无个人信息字段；输出为无量纲相对量，不构成诊疗建议。",
+                         records:recs}, null, 1);
+}
+function bDownload(){
+  const d=new Date(), p=n=>String(n).padStart(2,"0");
+  const fn=`tcm_blind_${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}.json`;
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([bExport()],{type:"application/json"}));
+  a.download=fn; document.body.appendChild(a); a.click();
+  setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },0);
+  return fn;
+}
+/* ---- 揭示图：三分支轨迹 ---- */
+const bcv=bEl("bChart"), bctx=bcv? bcv.getContext("2d") : null;
+function bDrawChart(br, E0v){
+  if(!bctx) return;
+  const w=bcv.width, h=bcv.height, pad=40;
+  bctx.clearRect(0,0,w,h); bctx.fillStyle="#0d141c"; bctx.fillRect(0,0,w,h);
+  const series=[[br.good,"#2ecc71","对证方"],[br.none,"#8b98a5","不用药"],[br.bad,"#ff4d5e","误治方"]];
+  let top=3; series.forEach(([s])=>s.history.forEach(r=>{ top=Math.max(top, Math.hypot(...r.slice(1))); }));
+  const T=Math.max(10, br.good.history[br.good.history.length-1][0]+0.5), n0=Math.hypot(...E0v), maxV=top*1.06;
+  const X=tt=>pad+(w-2*pad)*(tt/T), Y=v=>h-pad-(h-2*pad)*(v/maxV);
+  bctx.strokeStyle="#1b2430"; bctx.lineWidth=1;
+  for(let i=0;i<=4;i++){ const y=pad+(h-2*pad)*i/4; bctx.beginPath(); bctx.moveTo(pad,y); bctx.lineTo(w-pad,y); bctx.stroke(); }
+  [[0.4,"#f5c451","残余失衡比 0.4（收敛线）"],[1.0,"#ff4d5e","残余失衡比 1.0（加重线）"]].forEach(([r,col,lab])=>{
+    const y=Y(r*n0); bctx.strokeStyle=col; bctx.setLineDash([6,5]); bctx.lineWidth=1.4;
+    bctx.beginPath(); bctx.moveTo(pad,y); bctx.lineTo(w-pad,y); bctx.stroke(); bctx.setLineDash([]);
+    bctx.fillStyle=col; bctx.font="12px sans-serif"; bctx.fillText(lab, pad+6, y-5); });
+  series.forEach(([s,col])=>{ bctx.strokeStyle=col; bctx.lineWidth=2.8; bctx.beginPath();
+    s.history.forEach((row,i)=>{ const x=X(row[0]), y=Y(Math.hypot(...row.slice(1))); i? bctx.lineTo(x,y):bctx.moveTo(x,y); });
+    bctx.stroke(); });
+  bctx.fillStyle="#8b98a5"; bctx.font="12px sans-serif";
+  bctx.fillText("|E| 失衡度（无量纲相对量）· 纵轴上限 "+maxV.toFixed(1), pad+2, 20);
+  bctx.fillText("推演时间 →", w-pad-70, h-10);
+}
+/* ---- 按钮接线 + 初始化 ---- */
+bEl("modeDemo").onclick = ()=>setMode("demo");
+bEl("modeBlind").onclick = ()=>setMode("blind");
+bEl("modeSandbox").onclick = ()=>setMode("sandbox");
+bEl("exportBtn").onclick = ()=>downloadAll();
+bEl("bSubmit").onclick = ()=>{ try{ bSubmit(); }catch(e){ bEl("bSubmitHint").textContent="提交出错："+e.message; } };
+bEl("bNext").onclick = ()=>bSetCase((bState.caseIdx+1)%BCASES.length);
+bRenderCount(); bSetCase(0);
+
+/* ============================================================================
+   v0.3 沙盘模式「动态推演」（带量患者 ＋ 加减开方含量档 ＋ 按天轨迹 ＋ 先写预期再揭示）
+   硬约束（已核对，见 selftest/run.sh 的「硬约束核对」一节）：
+     · R1–R4 规则、现有药库（实测 44 味）、drugVec 六气映射系数、剂型时间常数：一个数字都没改
+     · 本模式唯一新增的引擎侧能力 = net_formula 的角色权重 × 量档系数（缺省 1.0，既有调用完全等价）
+   ⚠ 量档系数与剂型系数均为手工设定、未经标定；没有为了让任何证型「好看」而调参。
+   ============================================================================ */
+const SBKEY = "tcm_sandbox_v0_3_20261017";
+const SB_DAYS = 10;                              // 推演 T 解释为「天」
+const SB_MULTS = [0.5,0.75,1.0,1.5,2.0];         // 量档系数（手工设定、未标定）
+const SB_ROLES = ["君","臣","佐","使"];
+const SB_HERBS = Object.keys(D);                 // 现有药库实测 44 味，未增未减
+const sbEl = id=>document.getElementById(id);
+let sb = { E0:[0,0,0,0,0,0], herbs:[], form:"汤", course:5, preset:null,
+           expect:null, sim:null, nodrug:null, diff:null, revealed:false, stage:"edit", t0:0, elapsed:0 };
+
+function sbRecords(){ try{ const s=B_STORE.getItem(SBKEY); return s? JSON.parse(s):[]; }catch(e){ return []; } }
+function sbWrite(rec){ const a=sbRecords(); a.push(rec); try{ B_STORE.setItem(SBKEY, JSON.stringify(a)); }catch(e){} try{ bRenderCount(); }catch(e){} return a.length; }
+function sbFormulaText(){ return sb.herbs.length? sb.herbs.map(h=>`${h.name}(${h.role}×${Number(h.mult).toFixed(2)})`).join("·") : "（空方 · 不用药）"; }
+function sbInterp(series, day){                   // series = [[t,v],...] 升序
+  if(!series.length) return 0;
+  if(day<=series[0][0]) return series[0][1];
+  for(let i=1;i<series.length;i++){ if(series[i][0]>=day){ const a=series[i-1], b=series[i];
+    const k=(day-a[0])/(((b[0]-a[0])||1e-9)); return a[1]+k*(b[1]-a[1]); } }
+  return series[series.length-1][1];
+}
+
+/* ---- 面板构建 ---- */
+function sbBuildUI(){
+  const pr=sbEl("sbPresetRow");
+  Object.keys(CASES).forEach(n=>{ const b=document.createElement("button"); b.id="sbPreset_"+n;
+    b.textContent="载入·"+n; b.onclick=()=>sbLoadPreset(n); pr.appendChild(b); });
+  const sl=sbEl("sbSliders");
+  AXES.forEach((a,i)=>{ const d=document.createElement("div"); d.className="slider";
+    d.innerHTML=`<label>${a}</label><input id="sbAx_${a}" type="range" min="0" max="1.5" step="0.05" value="0"><output>0.00</output>`;
+    sl.appendChild(d);
+    d.querySelector("input").oninput=e=>{ sb.E0[i]=parseFloat(e.target.value); sb.preset=null; sbTouch(); sbSyncSliders(); }; });
+  const br=sbEl("sbBaseRow");
+  Object.keys(CASES).forEach(cn=>{ ["对证方","误治方"].forEach(kind=>{
+    const b=document.createElement("button"); b.textContent=kind+"·"+cn;
+    b.onclick=()=>sbLoadBase(cn,kind); br.appendChild(b); }); });
+  const bz=document.createElement("button"); bz.textContent="自由拼方（清空药味）"; bz.onclick=()=>{ sb.herbs=[]; sbTouch(); sbRefresh(); };
+  br.appendChild(bz);
+  const fr=sbEl("sbFormRow");
+  Object.keys(FORMS).forEach(f=>{ const b=document.createElement("button"); b.id="sbForm_"+f;
+    b.textContent="剂型·"+f+"("+FORMS[f]+")"; b.onclick=()=>{ sb.form=f; sbTouch(); sbRefresh(); }; fr.appendChild(b); });
+  sbEl("sbAdd").onclick=()=>{ const used=new Set(sb.herbs.map(h=>h.name));
+    const free=SB_HERBS.filter(n=>!used.has(n)); if(!free.length) return;
+    sb.herbs.push({name:free[0], role:"佐", mult:1.0}); sbTouch(); sbRefresh(); };
+  sbEl("sbCourse").oninput=()=>{ const v=parseFloat(sbEl("sbCourse").value);
+    sb.course=isFinite(v)? Math.max(1,Math.min(30,Math.round(v))) : 5; sbTouch(); sbSyncHerbs(); };
+  sbEl("sbSubmit").onclick=()=>{ const r=sbSubmit(); if(r && r.ok===false) sbEl("sbHint").textContent="⚠ "+r.err; };
+  sbEl("sbExport").onclick=()=>sbDownload();
+  sbEl("sbReset").onclick=()=>{ try{ B_STORE.removeItem(SBKEY); }catch(e){} try{ bRenderCount(); }catch(e){}
+    sbEl("sbHint").textContent="沙盘记录已清空（演示/盲测数据不受影响）。"; };
+}
+
+/* ---- 面板同步 ---- */
+function sbSyncSliders(){
+  AXES.forEach((a,i)=>{ const inp=sbEl("sbAx_"+a); if(!inp) return; inp.value=sb.E0[i];
+    const o=inp.parentNode.querySelector("output"); if(o) o.textContent=sb.E0[i].toFixed(2); });
+  sbEl("sbE0Read").innerHTML = "起点："+(sb.preset? ("预设「"+sb.preset+"」（已可继续调）") : "自定义（未用预设）")+
+    "　｜　E0 = ["+sb.E0.map(v=>v.toFixed(2)).join(", ")+"]　｜　|E0| = "+Math.hypot(...sb.E0).toFixed(3);
+}
+function sbSyncHerbs(){
+  const box=sbEl("sbHerbList"); box.innerHTML="";
+  sb.herbs.forEach((h,idx)=>{
+    const row=document.createElement("div"); row.className="sbrow";
+    const s1=document.createElement("select"), s2=document.createElement("select"), s3=document.createElement("select");
+    SB_HERBS.forEach(n=>{ const o=document.createElement("option"); o.value=n; o.textContent=n; if(n===h.name) o.selected=true; s1.appendChild(o); });
+    SB_ROLES.forEach(r=>{ const o=document.createElement("option"); o.value=r; o.textContent=r; if(r===h.role) o.selected=true; s2.appendChild(o); });
+    SB_MULTS.forEach(m=>{ const o=document.createElement("option"); o.value=String(m); o.textContent="×"+m.toFixed(2);
+      if(Math.abs(m-h.mult)<1e-9) o.selected=true; s3.appendChild(o); });
+    s1.onchange=()=>{ h.name=s1.value; sbTouch(); sbSyncHerbs(); };
+    s2.onchange=()=>{ h.role=s2.value; sbTouch(); sbSyncHerbs(); };
+    s3.onchange=()=>{ h.mult=parseFloat(s3.value); sbTouch(); sbSyncHerbs(); };
+    const del=document.createElement("button"); del.className="sbdel"; del.textContent="✕"; del.title="删除该味（减法）";
+    del.onclick=()=>{ sb.herbs.splice(idx,1); sbTouch(); sbSyncHerbs(); };
+    row.appendChild(s1); row.appendChild(s2); row.appendChild(s3); row.appendChild(del);
+    box.appendChild(row);
+  });
+  sbEl("sbFormulaRead").textContent = "当前方："+sbFormulaText()+"　｜　剂型："+sb.form+"（时间常数 "+FORMS[sb.form]+"）　｜　疗程："+sb.course+" 剂　｜　推演 "+SB_DAYS+" 天";
+  Object.keys(FORMS).forEach(f=>{ const b=sbEl("sbForm_"+f); if(b) b.classList.toggle("on", f===sb.form); });
+}
+function sbRefresh(){ sbSyncSliders(); sbSyncHerbs();
+  const c=sbEl("sbCourse"); if(c) c.value=String(sb.course); }
+
+/* ---- 参数变更：作废旧揭示 + 清空预期（保证「先写预期」的顺序在改动后仍然成立） ---- */
+function sbTouch(){ if(!sb.t0) sb.t0=performance.now(); sbInvalidate(); }
+function sbInvalidate(){
+  if(!sb.revealed) return;
+  sb.revealed=false; sb.stage="expect";
+  sbEl("sbRevealCard").style.display="none";
+  sbEl("sbHalf").value=""; sbEl("sbRecover").value="";
+  sbEl("sbHint").textContent="参数已变更 → 旧揭示作废。请重新写下你的预期（避免看了轨迹再改预期），再点「推演并对照揭示」。";
+}
+
+/* ---- 载入预设 / 基础方 / 加减 ---- */
+function sbLoadPreset(name){
+  if(!(name in CASES)) return {ok:false, err:"预设需为 "+Object.keys(CASES).join("/")};
+  sb.E0 = CASES[name].E.map(v=>Math.max(0,Math.min(1.5,v)));
+  sb.preset = name; sbTouch(); sbRefresh();
+  return {ok:true, preset:name, E0:sb.E0.slice()};
+}
+function sbLoadBase(cn, kind){
+  if(!(cn in CASES)) return {ok:false, err:"证候不存在"};
+  const list = (kind==="误治方"? CASES[cn].bad : CASES[cn].good);
+  sb.herbs = list.map(([n,r])=>({name:n, role:r, mult:1.0}));
+  sbTouch(); sbRefresh();
+  return {ok:true, herbs:sb.herbs.map(h=>h.name), base:kind+"·"+cn};
+}
+function sbAddHerb(name, role, mult){
+  if(!(name in D)) return {ok:false, err:"药味需在 43 味库内"};
+  const r = SB_ROLES.indexOf(role)>=0? role : "佐";
+  const m = (SB_MULTS.indexOf(Number(mult))>=0)? Number(mult) : 1.0;
+  if(sb.herbs.some(h=>h.name===name)) return {ok:false, err:name+" 已在方中（可改量档/角色）"};
+  sb.herbs.push({name:name, role:r, mult:m}); sbTouch(); sbRefresh();
+  return {ok:true, herbs:sb.herbs.map(h=>h.name+"("+h.role+"×"+h.mult+")")};
+}
+function sbRemoveHerb(name){
+  const i=sb.herbs.findIndex(h=>h.name===name);
+  if(i<0) return {ok:false, err:name+" 不在方中"};
+  sb.herbs.splice(i,1); sbTouch(); sbRefresh();
+  return {ok:true, herbs:sb.herbs.map(h=>h.name)};
+}
+
+/* ---- 推演（沙盘）：局部改写全局仿真状态，跑完原样还原，不影响演示/盲测 ============ */
+function sbSim(E0v, list, formKey, course, days){
+  const S={E:E.slice(), E0:E0.slice(), net:net.slice(), netEff:netEff.slice(), tonic:tonic, warm:warm,
+           parts:parts.slice(), form:form, t:t, nDose:nDose, playing:playing,
+           history:history.slice(), curCase:curCase};
+  const n0=Math.hypot(...E0v)||1e-9;
+  E0=E0v.slice();
+  if(list && list.length){ const nd=formulaNet(list); net=nd.net.slice(); tonic=nd.tonic; warm=nd.warm; parts=nd.parts; }
+  else { net=[0,0,0,0,0,0]; tonic=0; warm=0; parts=[]; }
+  /* v0.4：场干预叠加——泻 → 净向量（netEff），补 → 扶正项（tonic）。
+     无场干预（dose=0）时 net/tonic 与 v0.3 逐位相同；R3 修正仍在下一行统一施加。 */
+  const fo = (typeof sbFieldOp === "function") ? sbFieldOp() : null;
+  if(fo && fo.active){
+    for(let i=0;i<6;i++) net[i] += fo.dNet[i];
+    if(fo.tonic > 0) tonic = Math.min(0.25, tonic + fo.tonic);
+  }
+  form = formKey||"汤"; nDose = Math.max(1, Math.round(course||1)); playing=false;
+  netEff = netEffOf(net, E0);                       // 与演示模式共用同一处 R3 修正
+  E=E0.slice(); t=0; history=[[1,...E]];
+  const steps=Math.round(days/dt);
+  const daily=[{day:0, absE:n0, ratio:1}];
+  let nextDay=1;
+  for(let i=0;i<steps;i++){
+    step(dt);
+    if(t-history[history.length-1][0]>=0.08) history.push([t,...E]);
+    while(nextDay<=days && t>=nextDay-1e-9){ const ae=Math.hypot(...E); daily.push({day:nextDay, absE:ae, ratio:ae/n0}); nextDay++; }
+  }
+  const hist = history.map(r=>[Number(r[0].toFixed(2)), Number((Math.hypot(...r.slice(1))/n0).toFixed(4))]);
+  let halfDay=null, recDay=null;
+  hist.forEach(([tt,rr])=>{ if(halfDay===null && rr<=0.5) halfDay=tt; if(recDay===null && rr<=0.10) recDay=tt; });
+  const out={ daily:daily, series:hist, ratio:Math.hypot(...E)/n0, absE:Math.hypot(...E), n0:n0,
+              half_day:halfDay, recover_day:recDay, E:E.slice(), t:t,
+              net:net.slice(), netEff:netEff.slice(), tonic:tonic, warm:warm, parts:parts.slice() };
+  E=S.E; E0=S.E0; net=S.net; netEff=S.netEff; tonic=S.tonic; warm=S.warm; parts=S.parts;
+  form=S.form; t=S.t; nDose=S.nDose; playing=S.playing; history=S.history; curCase=S.curCase;
+  return out;
+}
+function sbRunOnly(){
+  const list=sb.herbs.map(h=>[h.name,h.role,h.mult]);
+  return sbSim(sb.E0, list, sb.form, sb.course, SB_DAYS);
+}
+
+/* ---- 预期曲线与差异点（预期口径全部写在页面上，可复核） ------------------------ */
+function sbExpectSeries(halfDays, recDays, days){
+  const H=Math.max(0.25, halfDays), R=Math.max(H+0.25, recDays), pts=[];
+  for(let d=0; d<=days+1e-9; d+=0.25){ const dd=Number(d.toFixed(2));
+    let r; if(dd<=H) r=1-0.5*(dd/H); else if(dd<=R) r=0.5-0.40*(dd-H)/(R-H);
+    else r=0.10*Math.exp(-(dd-R)/3);
+    pts.push([dd, Number(r.toFixed(4))]); }
+  return pts;
+}
+function sbDiffData(sim, halfDays, recDays, days){
+  const exp=sbExpectSeries(halfDays, recDays, days), arr=[];
+  for(let d=0; d<=days+1e-9; d+=0.25){ const dd=Number(d.toFixed(2));
+    const er=Number(sbInterp(sim.series, dd).toFixed(4)), xr=Number(sbInterp(exp, dd).toFixed(4));
+    arr.push({day:dd, engine:er, expect:xr, diff:Number(Math.abs(er-xr).toFixed(4))}); }
+  let mx=arr[0]; arr.forEach(p=>{ if(p.diff>mx.diff) mx=p; });
+  const mean=arr.reduce((s,p)=>s+p.diff,0)/arr.length;
+  const top=arr.slice().sort((a,b)=>b.diff-a.diff).slice(0,3);
+  return {series:arr, expect_series:exp, max:mx, mean:Number(mean.toFixed(4)), top3:top};
+}
+
+/* ---- 揭示渲染 ---- */
+const sbVerdictColor = v => (v==="收敛"? "var(--good)" : (v==="迁延"? "var(--warn)" : "var(--bad)"));
+function sbRenderReveal(sim, nodrug, diff){
+  const V=bVerdict(sim.ratio), h=sb.expect.half_days, rc=sb.expect.recover_days;
+  const ek=sbEl("sbEngineKpi");
+  ek.textContent=`残余失衡比 ${sim.ratio.toFixed(3)}（${V}）`; ek.style.color=sbVerdictColor(V);
+  sbEl("sbEngineSub").textContent = `减半（≤0.50）：${sim.half_day===null? "10 天内未达" : "第 "+sim.half_day.toFixed(1)+" 天"}`+
+    `｜基本恢复（≤0.10）：${sim.recover_day===null? "10 天内未达" : "第 "+sim.recover_day.toFixed(1)+" 天"}`+
+    `｜同一患者不用药（仅自愈）：${nodrug.ratio.toFixed(3)}（${bVerdict(nodrug.ratio)}）`;
+  sbEl("sbExpectKpi").textContent = `减半：第 ${h.toFixed(1)} 天｜基本恢复：第 ${rc.toFixed(1)} 天`;
+  sbEl("sbExpectKpi").style.color="var(--warn)";
+  sbEl("sbExpectSub").textContent = `你的预期连线：第 0 天 = 1.00 → 第 ${h.toFixed(1)} 天 = 0.50 → 第 ${rc.toFixed(1)} 天 = 0.10（之后按 τ=3 天衰减）`+
+    (sb.expect.note? `｜备注：${sb.expect.note}` : "");
+  sbEl("sbDiffNote").innerHTML = `预期与推演差异最大的时点：<span style="color:#ff7a18">第 ${diff.max.day.toFixed(2)} 天</span>`+
+    `（差值 ${diff.max.diff.toFixed(3)}：你预期残余 ${diff.max.expect.toFixed(3)}，引擎 ${diff.max.engine.toFixed(3)}）`+
+    `　｜　全程平均差异 ${diff.mean.toFixed(3)}　｜　差异最大的三天：`+
+    diff.top3.map(p=>`第${p.day.toFixed(2)}天(${p.diff.toFixed(3)})`).join("、");
+  sbEl("sbDayTable").innerHTML = sim.daily.map(d=>{
+    const hi=Math.abs(d.day-diff.max.day)<0.5;
+    return `<span${hi? ' style="color:#ff9b57"':''}>第<b>${d.day}</b>天 <b>${d.ratio.toFixed(3)}</b></span>`; }).join("　｜　");
+  sbEl("sbVerdictNote").textContent = `判定门槛：残余失衡比 <0.4 收敛｜0.4–1.0 迁延｜>1.0 加重。`+
+    `本沙盘：方 = ${sbFormulaText()}；剂型 = ${sb.form}（τ=${FORMS[sb.form]}）；疗程 = ${sb.course} 剂；推演 ${SB_DAYS} 天（dt=${dt} 天）。`+
+    `量档系数与剂型时间常数均为手工设定、未经标定；绝对没有为了让某个证型「好看」而调参。`;
+  sbEl("sbRevealCard").style.display="";
+  sbDrawSandbox(sim, diff);
+}
+const sbcv=sbEl("sbChart"), sbctx = sbcv? sbcv.getContext("2d") : null;
+function sbDrawSandbox(sim, diff){
+  if(!sbctx) return;
+  const w=sbcv.width, h=sbcv.height, pad=54, TOPMAX=1.4;
+  sbctx.clearRect(0,0,w,h); sbctx.fillStyle="#0d141c"; sbctx.fillRect(0,0,w,h);
+  const X=d=>pad+(w-2*pad)*(d/SB_DAYS), Y=r=>h-pad-(h-pad-40)*Math.min(TOPMAX,r)/TOPMAX;
+  sbctx.font="12px sans-serif";
+  for(let d=0; d<=SB_DAYS; d+=0.5){ const x=X(d), major=(Math.abs(d-Math.round(d))<1e-9);
+    sbctx.strokeStyle= major? "#1b2430" : "#151d27"; sbctx.lineWidth=1;
+    sbctx.beginPath(); sbctx.moveTo(x,40); sbctx.lineTo(x,h-pad); sbctx.stroke();
+    if(major){ sbctx.fillStyle="#8b98a5"; sbctx.fillText(String(d), x-(d>9?7:4), h-pad+18); } }
+  for(let i=0;i<=4;i++){ const y=40+(h-pad-40)*i/4;
+    sbctx.strokeStyle="#151d27"; sbctx.lineWidth=1; sbctx.beginPath(); sbctx.moveTo(pad,y); sbctx.lineTo(w-pad,y); sbctx.stroke(); }
+  [[0.4,"#f5c451","残余失衡比 0.4（收敛线）"],[1.0,"#ff4d5e","残余失衡比 1.0（加重线）"]].forEach(([r,col,lab])=>{
+    const y=Y(r); sbctx.strokeStyle=col; sbctx.setLineDash([6,5]); sbctx.lineWidth=1.4;
+    sbctx.beginPath(); sbctx.moveTo(pad,y); sbctx.lineTo(w-pad,y); sbctx.stroke(); sbctx.setLineDash([]);
+    sbctx.fillStyle=col; sbctx.fillText(lab, pad+6, y-5); });
+  sbctx.strokeStyle="#f5c451"; sbctx.lineWidth=2.2; sbctx.setLineDash([7,5]); sbctx.beginPath();
+  diff.expect_series.forEach(([d,r],i)=>{ const x=X(d), y=Y(r); i? sbctx.lineTo(x,y) : sbctx.moveTo(x,y); });
+  sbctx.stroke(); sbctx.setLineDash([]);
+  sbctx.strokeStyle="#1fb6ff"; sbctx.lineWidth=2.8; sbctx.beginPath();
+  sim.series.forEach(([d,r],i)=>{ const x=X(d), y=Y(r); i? sbctx.lineTo(x,y) : sbctx.moveTo(x,y); });
+  sbctx.stroke();
+  const mx=diff.max, xm=X(mx.day), y1=Y(mx.engine), y2=Y(mx.expect);
+  sbctx.strokeStyle="#ff4d5e"; sbctx.setLineDash([3,3]); sbctx.lineWidth=1.6;
+  sbctx.beginPath(); sbctx.moveTo(xm,y1); sbctx.lineTo(xm,y2); sbctx.stroke(); sbctx.setLineDash([]);
+  sbctx.fillStyle="#ff4d5e";
+  sbctx.beginPath(); sbctx.arc(xm,y1,4.5,0,7); sbctx.fill();
+  sbctx.beginPath(); sbctx.arc(xm,y2,4.5,0,7); sbctx.fill();
+  sbctx.fillStyle="#ffb3bd"; sbctx.fillText("差异最大 第"+mx.day.toFixed(1)+"天", Math.min(xm+8, w-140), 36);
+  sbctx.fillStyle="#8b98a5"; sbctx.font="13px sans-serif";
+  sbctx.fillText("残余失衡比 |E(t)| / |E(0)|", pad+2, 22);
+  sbctx.fillText("推演天数（天）→", w-pad-100, h-12);
+}
+
+/* ---- 提交（先写预期 → 揭示 → 落盘） ---- */
+function sbSubmit(){
+  if(sb.revealed) return {ok:false, err:"本沙盘已提交；改动参数后可重新提交。"};
+  const h=parseFloat(sbEl("sbHalf").value), rc=parseFloat(sbEl("sbRecover").value);
+  if(!isFinite(h) || !isFinite(rc)) return {ok:false, err:"请先写下你的临床经验预期：预计几天减半 / 预计几天基本恢复。"};
+  if(!(h>0) || !(rc>h))            return {ok:false, err:"预期需满足 0 < 预计减半天数 < 预计恢复天数。"};
+  sb.expect = {half_days:h, recover_days:rc, note:(sbEl("sbWhy").value||"")};
+  const list=sb.herbs.map(x=>[x.name,x.role,x.mult]);
+  const sim = sbSim(sb.E0, list, sb.form, sb.course, SB_DAYS);
+  const nodrug = sbSim(sb.E0, [], sb.form, sb.course, SB_DAYS);
+  const diff = sbDiffData(sim, h, rc, SB_DAYS);
+  sb.sim=sim; sb.nodrug=nodrug; sb.diff=diff;
+  sb.elapsed = Math.round(performance.now() - (sb.t0||performance.now()));
+  sbRenderReveal(sim, nodrug, diff);
+  sb.revealed=true; sb.stage="revealed";
+  const rec=sbExportRecord(sim, nodrug, diff, list);
+  sbWrite(rec); sb.t0=0;
+  return rec;
+}
+function sbExportRecord(sim, nodrug, diff, list){
+  const seq=sbRecords().length+1;
+  return {
+    schema:"tcm_sandbox.v0.3", anon_id:"sandbox-anon-"+String(seq).padStart(3,"0"), seq:seq,
+    ts:new Date().toISOString(),
+    E0:{风:sb.E0[0],寒:sb.E0[1],暑:sb.E0[2],湿:sb.E0[3],燥:sb.E0[4],火:sb.E0[5]},
+    E0_vector:sb.E0.slice(), preset_used:sb.preset,
+    formula:list.map(x=>({药名:x[0], 角色:x[1], 量档:x[2]})),
+    formula_text:sbFormulaText(),
+    form:sb.form, form_tau:FORMS[sb.form], course_doses:sb.course, sim_days:SB_DAYS,
+    expect:{half_days:sb.expect.half_days, recover_days:sb.expect.recover_days, note:sb.expect.note},
+    expect_rule:"0 天=1.00 → 减半日=0.50 → 恢复日=0.10 → 其后 τ=3 天衰减（线性连线）",
+    engine:{residual_ratio:Number(sim.ratio.toFixed(4)), verdict:bVerdict(sim.ratio),
+            half_day:sim.half_day, recover_day:sim.recover_day, absE_end:Number(sim.absE.toFixed(4))},
+    engine_no_drug:{residual_ratio:Number(nodrug.ratio.toFixed(4)), verdict:bVerdict(nodrug.ratio)},
+    trajectory_daily:sim.daily.map(d=>({day:d.day, absE:Number(d.absE.toFixed(4)), ratio:Number(d.ratio.toFixed(4))})),
+    trajectory_full:sim.series,
+    expect_curve:diff.expect_series,
+    diff_point:{max_day:diff.max.day, max_diff:diff.max.diff, expect_at_max:diff.max.expect, engine_at_max:diff.max.engine,
+                mean_diff:diff.mean, top3:diff.top3},
+    diff_series:diff.series,
+    elapsed_ms:sb.elapsed,
+    calibration_note:"量档系数（君1.0/臣0.6/佐0.4/使0.25 × 量档 0.5–2.0）与剂型时间常数为手工设定、未经标定；输出为无量纲相对量，不构成诊疗建议。",
+    privacy:"无个人信息字段；仅存本机 localStorage；无任何网络请求。"
+  };
+}
+function sbExport(){
+  const recs=sbRecords();
+  return JSON.stringify({schema:"tcm_sandbox.v0.3", exported_at:new Date().toISOString(), count:recs.length,
+    note:"纯前端导出；无个人信息字段；量档与剂型系数为手工设定、未经标定；输出为无量纲相对量，不构成诊疗建议。",
+    records:recs}, null, 1);
+}
+function sbDownload(){
+  const d=new Date(), p=n=>String(n).padStart(2,"0");
+  const fn=`tcm_sandbox_${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}.json`;
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([sbExport()],{type:"application/json"}));
+  a.download=fn; document.body.appendChild(a); a.click();
+  setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },0);
+  return fn;
+}
+/* 顶部「导出 JSON」= 三模式合并一份（records 仍为盲测记录，另附 sandbox 段，向后兼容） */
+function exportAll(){ const b=bRecords(), s=sbRecords();
+  return JSON.stringify({schema:"tcm_demo.v0.3", exported_at:new Date().toISOString(), count:b.length,
+    note:"纯前端导出（演示/盲测/沙盘共用一份文件）；无个人信息字段；输出为无量纲相对量，不构成诊疗建议。",
+    records:b, sandbox:{schema:"tcm_sandbox.v0.3", count:s.length, records:s}}, null, 1); }
+function downloadAll(){
+  const d=new Date(), p=n=>String(n).padStart(2,"0");
+  const fn=`tcm_demo_${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}.json`;
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([exportAll()],{type:"application/json"}));
+  a.download=fn; document.body.appendChild(a); a.click();
+  setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },0);
+  return fn;
+}
+
+/* ---- 初始化（默认给一个起点：风寒表实预设 + 该证候对证方；不改演示模式状态） ---- */
+sbBuildUI(); sbLoadPreset("风寒表实"); sbLoadBase("风寒表实","对证方"); sbRefresh(); sb.t0=0;
+
+/* ============================================================================
+   v0.4 沙盘「可交互状态场」— 场求解器 + 页面层
+   源文件：src/sb_field_core.js / src/sb_field_ui.js（由 src/build_embed.py 注入，
+   单文件交付时无需任何外部依赖；此段之外未改动引擎规则）
+   ============================================================================ */
+//[[SB_FIELD]]
+/* ---- src/sb_field_core.js ---- */
+/* ============================================================================
+   v0.4 沙盘「可交互状态场」— 场求解器（单一真源；由 build_embed.py 注入单文件 HTML）
+   模型：六通道阻尼波动–反应–扩散方程，64×64 显式积分
+       ∂u_c/∂t = v_c
+       ∂v_c/∂t = c2·∇²u_c  −  k0·u_c  +  Σ_j Mf[c][j]·u_j  +  S_c(x,y)  +  P_c(x,y)
+     其中
+       S_c = k0 · base_c · B_c(x,y)     源项：当前六轴带量状态，六个高斯「气域」
+       Mf  = 引擎 Msrc 传变系数 × KF    六气传变耦合（系数原值不动，只乘场层时间缩放）
+       k0  = 引擎自愈项口径（0.05+tonic 类比的场层时间尺度）→ 未干预时扰动按此衰减
+       边界：外围一圈 Dirichlet = BC · base_c · B_c（体表为界，随状态变动）
+   本文件不参与结局判定；判定仍由引擎 step()/R1–R4 给出。
+   ============================================================================ */
+(function (global) {
+  'use strict';
+
+  var FLD_DEFAULT = {
+    N: 64,             // 网格：64×64
+    SUB: 4,            // 每帧子步数
+    c2: 0.32,          // 波动项系数（显式稳定上限 0.5）
+    gamma: 0.015,      // 速度阻尼（每子步）
+    k0f: 0.006,        // 自愈衰减（每子步）→ τ≈167 子步 ≈ 0.7 s
+    KF: 0.020,         // 传变耦合缩放（引擎 Msrc 原值 × 本系数）
+    BC: 0.45,          // 边界 Dirichlet 比例
+    sigma: 0.155,      // 气域高斯 σ（归一化坐标）
+    ring: 0.325,       // 六个气域中心到画面中心的半径
+    kernR: 0.115,      // 手法作用核半径
+    PA: 0.350,         // 泻法局部清除率（每子步，峰值）
+    KBT: 0.030,        // 补法局部自愈增强（每子步，峰值）
+    coupling: []       // [[src,tgt,coef],...]
+  };
+
+  function createFieldSolver(opts) {
+    var o = {}, k;
+    for (k in FLD_DEFAULT) o[k] = FLD_DEFAULT[k];
+    if (opts) for (k in opts) o[k] = opts[k];
+
+    var N = o.N, C = 6, NN = N * N;
+    var u = [], v = [], acc = [], S = [], Bs = [];
+    for (var c = 0; c < C; c++) {
+      u.push(new Float32Array(NN)); v.push(new Float32Array(NN));
+      acc.push(new Float32Array(NN)); S.push(new Float32Array(NN));
+      Bs.push(new Float32Array(NN));
+    }
+
+    /* ---- 六个气域基底：等角六点高斯 ---- */
+    (function buildBasis() {
+      var s2 = 2 * o.sigma * o.sigma;
+      for (var ch = 0; ch < C; ch++) {
+        var a = -Math.PI / 2 + ch * Math.PI / 3;
+        var bx = 0.5 + Math.cos(a) * o.ring, by = 0.5 + Math.sin(a) * o.ring;
+        var Bc = Bs[ch];
+        for (var y = 0; y < N; y++) {
+          var py = (y + 0.5) / N;
+          for (var x = 0; x < N; x++) {
+            var px = (x + 0.5) / N;
+            var dx = px - bx, dy = py - by;
+            Bc[y * N + x] = Math.exp(-(dx * dx + dy * dy) / s2);
+          }
+        }
+      }
+    })();
+
+    var base = new Float64Array(C);
+    var kern = new Float32Array(NN);
+    var k0l = new Float32Array(NN);      // 手法清除率（每子步）
+    var pushOn = false, pushAxis = 1, pushChan = -1, pushAll = false;
+    var CP = o.coupling || [];
+
+    function rebuildS() {
+      for (var ch = 0; ch < C; ch++) {
+        var Sc = S[ch], Bc = Bs[ch], b = o.k0f * base[ch];
+        for (var i = 0; i < NN; i++) Sc[i] = b * Bc[i];
+      }
+    }
+    function setBase(arr) {
+      for (var i = 0; i < C; i++) base[i] = Math.max(0, Math.min(3, Number(arr[i]) || 0));
+      rebuildS();
+    }
+    function getBase() { return Array.prototype.slice.call(base); }
+
+    /* 手法核：指针处高斯，峰值 1 */
+    function setKernel(px, py) {
+      var s2 = 2 * o.kernR * o.kernR;
+      for (var y = 0; y < N; y++) {
+        var dy = (y + 0.5) / N - py;
+        for (var x = 0; x < N; x++) {
+          var dx = (x + 0.5) / N - px;
+          kern[y * N + x] = Math.exp(-(dx * dx + dy * dy) / s2);
+        }
+      }
+    }
+    function clearKernel() { for (var i = 0; i < NN; i++) kern[i] = 0; }
+
+    /* 手法：dir=+1 补（局部提升自愈项，全通道）, dir=-1 泻（局部抽取该通道） */
+    function setPush(axis, dir, strength) {
+      pushAxis = Math.max(0, Math.min(C - 1, axis | 0));
+      var s = Math.max(0, Math.min(3, Number(strength) || 0));
+      pushOn = s > 0 && dir !== 0;
+      if (!pushOn) { pushChan = -1; pushAll = false; for (var z = 0; z < NN; z++) k0l[z] = 0; return; }
+      var kk = (dir > 0) ? o.KBT * s : o.PA * s;      // 补：全通道局部自愈；泻：该通道局部清除
+      pushChan = (dir > 0) ? -1 : pushAxis;
+      pushAll = (dir > 0);
+      for (var i = 0; i < NN; i++) k0l[i] = kk * kern[i];
+    }
+    function clearPush() { pushOn = false; pushChan = -1; pushAll = false; for (var i = 0; i < NN; i++) k0l[i] = 0; }
+    function getPush() { return { on: pushOn, axis: pushAxis, chan: pushChan, all: pushAll, k: pushOn ? k0l[(N >> 1) * N + (N >> 1)] : 0 }; }
+
+    function substep() {
+      var ch, i, x, y, kk, A, U, Sc, L;
+      /* 1) 拉普拉斯 + 衰减 + 源项（内区） */
+      for (ch = 0; ch < C; ch++) {
+        U = u[ch]; A = acc[ch]; Sc = S[ch];
+        for (y = 1; y < N - 1; y++) {
+          kk = y * N + 1;
+          for (x = 1; x < N - 1; x++, kk++) {
+            L = U[kk - 1] + U[kk + 1] + U[kk - N] + U[kk + N] - 4 * U[kk];
+            A[kk] = o.c2 * L - o.k0f * U[kk] + Sc[kk];
+          }
+        }
+      }
+      /* 2) 六气传变耦合（引擎 Msrc 系数 × KF） */
+      for (i = 0; i < CP.length; i++) {
+        var s = CP[i][0], t = CP[i][1], g = CP[i][2], Us = u[s], At = acc[t];
+        for (kk = 0; kk < NN; kk++) At[kk] += g * Us[kk];
+      }
+      /* 3) 手法：以「清除率」形式进入状态更新（见 4），保证数值稳定 */
+      /* 4) 显式积分（半隐式阻尼 + 局部清除率） */
+      for (ch = 0; ch < C; ch++) {
+        U = u[ch]; var V = v[ch]; A = acc[ch];
+        var SK = (pushOn && (pushAll || ch === pushChan)) ? k0l : null;
+        for (kk = 0; kk < NN; kk++) {
+          var vv = (V[kk] + A[kk]) * (1 - o.gamma);
+          V[kk] = vv;
+          var uu = U[kk] + vv;
+          if (SK) uu -= SK[kk] * uu;
+          if (uu < 0) { U[kk] = 0; if (vv < 0) V[kk] = 0; }        // 触底即停，避免在钳位处反弹注入能量
+          else if (uu > 4) { U[kk] = 4; if (vv > 0) V[kk] = 0; }
+          else U[kk] = uu;
+        }
+      }
+      /* 5) 边界 Dirichlet（随状态变动的「体表」） */
+      for (ch = 0; ch < C; ch++) {
+        U = u[ch]; var Vc = v[ch], Bc = Bs[ch], b = o.BC * base[ch];
+        for (x = 0; x < N; x++) {
+          kk = x; U[kk] = b * Bc[kk]; Vc[kk] = 0;
+          kk = (N - 1) * N + x; U[kk] = b * Bc[kk]; Vc[kk] = 0;
+        }
+        for (y = 0; y < N; y++) {
+          kk = y * N; U[kk] = b * Bc[kk]; Vc[kk] = 0;
+          kk = y * N + N - 1; U[kk] = b * Bc[kk]; Vc[kk] = 0;
+        }
+      }
+    }
+
+    function step(n) { for (var i = 0; i < (n || 1); i++) substep(); }
+    function zero() {
+      for (var ch = 0; ch < C; ch++) { u[ch].fill(0); v[ch].fill(0); }
+    }
+    function means() {
+      var out = [];
+      for (var ch = 0; ch < C; ch++) {
+        var U = u[ch], s = 0;
+        for (var i = 0; i < NN; i++) s += U[i];
+        out.push(s / NN);
+      }
+      return out;
+    }
+    function rms() {
+      var s = 0;
+      for (var ch = 0; ch < C; ch++) { var U = u[ch];
+        for (var i = 0; i < NN; i++) s += U[i] * U[i]; }
+      return Math.sqrt(s / (C * NN));
+    }
+    function vmax() {
+      var m = 0;
+      for (var ch = 0; ch < C; ch++) { var V = v[ch];
+        for (var i = 0; i < NN; i++) { var a = V[i] < 0 ? -V[i] : V[i]; if (a > m) m = a; } }
+      return m;
+    }
+    function finite() {
+      for (var ch = 0; ch < C; ch++) { var U = u[ch];
+        for (var i = 0; i < NN; i++) if (!isFinite(U[i])) return false; }
+      return true;
+    }
+    /* 基函数在任意位置的双线性取值（剂量按落点加权用） */
+    function bval(ch, px, py) {
+      var X = Math.min(N - 1.001, Math.max(0, px * N - 0.5));
+      var Y = Math.min(N - 1.001, Math.max(0, py * N - 0.5));
+      var x0 = X | 0, y0 = Y | 0, fx = X - x0, fy = Y - y0;
+      var Bc = Bs[ch], i00 = y0 * N + x0;
+      var a = Bc[i00], b = Bc[i00 + 1], c = Bc[i00 + N], d = Bc[i00 + N + 1];
+      return (a * (1 - fx) + b * fx) * (1 - fy) + (c * (1 - fx) + d * fx) * fy;
+    }
+    /* 快照：任意中心的 n×n 数值块（默认取画面中心） */
+    function block(ch, cx, cy, n) {
+      ch = ch | 0; n = n || 10;
+      var U = u[ch], gx = Math.max(0, Math.min(N - n, Math.round((cx === undefined ? 0.5 : cx) * N - n / 2)));
+      var gy = Math.max(0, Math.min(N - n, Math.round((cy === undefined ? 0.5 : cy) * N - n / 2)));
+      var out = [];
+      for (var y = 0; y < n; y++) {
+        var row = [];
+        for (var x = 0; x < n; x++) row.push(Number(U[(gy + y) * N + gx + x].toFixed(6)));
+        out.push(row);
+      }
+      return out;
+    }
+    /* 快照：n×n 数值块 + 每通道均值/RMS + FNV-1a 全量哈希 */
+    function snapshot(ch, rows, cols) {
+      rows = rows || 10; cols = cols || 10;
+      ch = (ch === undefined || ch === null) ? 0 : (ch | 0);
+      var mm = means(), hot = 0;
+      for (var i = 1; i < C; i++) if (mm[i] > mm[hot]) hot = i;
+      var ang = -Math.PI / 2 + ch * Math.PI / 3, angHot = -Math.PI / 2 + hot * Math.PI / 3;
+      return {
+        channel: ch, block: block(ch, 0.5 + Math.cos(ang) * o.ring, 0.5 + Math.sin(ang) * o.ring, rows),
+        hot_channel: hot, hot_block: block(hot, 0.5 + Math.cos(angHot) * o.ring, 0.5 + Math.sin(angHot) * o.ring, rows),
+        means: mm.map(function (x) { return Number(x.toFixed(8)); }),
+        rms: Number(rms().toFixed(8)), vmax: Number(vmax().toFixed(8)), hash: hash()
+      };
+    }
+    function hash() {
+      var h = 2166136261 >>> 0;
+      for (var ch = 0; ch < C; ch++) {
+        var U = u[ch];
+        for (var i = 0; i < NN; i++) {
+          var x = U[i] * 1e6 | 0;
+          h ^= (x & 0xffff); h = Math.imul(h, 16777619) >>> 0;
+        }
+      }
+      return ('00000000' + h.toString(16)).slice(-8);
+    }
+
+    /* 气域中心（归一化坐标） */
+    function blobPos(ch) {
+      var a = -Math.PI / 2 + ch * Math.PI / 3;
+      return { x: 0.5 + Math.cos(a) * o.ring, y: 0.5 + Math.sin(a) * o.ring };
+    }
+    rebuildS();
+    return {
+      cfg: o, N: N, C: C, NN: NN,
+      u: u, v: v, Bs: Bs, blobPos: blobPos,
+      setBase: setBase, getBase: getBase, rebuildS: rebuildS,
+      setKernel: setKernel, clearKernel: clearKernel, setPush: setPush, clearPush: clearPush, getPush: getPush,
+      step: step, substep: substep, zero: zero,
+      means: means, rms: rms, vmax: vmax, finite: finite, bval: bval,
+      snapshot: snapshot, hash: hash
+    };
+  }
+
+  global.TCM_FIELD = { createFieldSolver: createFieldSolver, FLD_DEFAULT: FLD_DEFAULT };
+  if (typeof module !== 'undefined' && module.exports) module.exports = global.TCM_FIELD;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+/* ---- src/sb_field_ui.js ---- */
+/* ============================================================================
+   v0.4 沙盘「可交互状态场」— 页面层（在单文件 HTML 内运行；不联网、无外部库）
+   语义约定（面板上同步显示）：
+     泻 = 祛该气之邪（局部清除该通道 → 场被挖开、四周回填）
+     补 = 扶该气之正（局部提升自愈项，全通道收敛加快 → 引擎 side 提高 tonic）
+     落点 = 作用部位（落点处该气强度决定有效剂量）
+     力度 × 时长 = 剂量
+   写回：松手后场收敛（振荡 vmax 落回静止），把本次拖动的剂量积分写入 E0；
+         方外药力同时留在 netEff（泻）/ tonic（补），进入原有 10 天轨迹与结局判定。
+   ============================================================================ */
+(function () {
+  'use strict';
+  if (typeof document === 'undefined') return;
+  var cv = document.getElementById('sbField');
+  if (!cv || typeof TCM_FIELD === 'undefined') return;
+
+  var AXF = AXES, KF = 0.020, SUB = 4;
+  var CP = Msrc.map(function (m) { return [AXF.indexOf(m[0]), AXF.indexOf(m[1]), m[2] * KF]; });
+  var F = TCM_FIELD.createFieldSolver({ coupling: CP });
+
+  /* 场层与状态/引擎之间的换算系数（手工设定、未经标定；不参与 R1–R4） */
+  var KB = 0.22;     // 每「力度·秒·落点强度」→ 基线（E0）变化量
+  var KBc = 0.25;    // 补法对基线的间接量（扶正使邪退，弱于直泻）
+  var KN = 0.33;     // 每单位有效剂量 → 净向量 netEff 削减（泻）
+  var KT = 0.060;    // 每单位有效剂量 → 扶正项 tonic（补）
+
+  var COL = [[0.20, 0.85, 0.50], [0.15, 0.70, 1.00], [1.00, 0.55, 0.10],
+             [0.50, 0.40, 1.00], [0.85, 0.80, 0.35], [1.00, 0.30, 0.38]];
+
+  var LAB = {
+    '泻': {
+      '风': ['疏风解表', '辛散以祛风：风邪在表，取微汗而解'],
+      '寒': ['温阳散寒', '辛热以逐寒：寒邪直中，温散而复其阳'],
+      '暑': ['清暑透热', '清透以解暑：暑热内蕴，透气分而解'],
+      '湿': ['化湿利浊', '芳化淡渗：湿浊中阻，分消走泄'],
+      '燥': ['润燥生津', '甘润以救燥：燥胜则干，濡其燥而津自复'],
+      '火': ['清热泻火', '苦寒直折：火热炽盛，折其势而下行']
+    },
+    '补': {
+      '风': ['养血柔肝', '风动之根在血虚，养血则风自息'],
+      '寒': ['温阳益气', '阳虚生寒，温补以扶其阳'],
+      '暑': ['益气生津', '暑伤气津，益气以复其津'],
+      '湿': ['健脾运湿', '脾运则湿化，扶正以化湿'],
+      '燥': ['滋阴润燥', '燥胜则干，滋阴以润其燥'],
+      '火': ['壮水制火', '水足则火降，滋阴以制火']
+    }
+  };
+
+  var SZ = cv.width > 0 ? cv.width : 512;
+  var off = document.createElement('canvas'); off.width = F.N; off.height = F.N;
+  var octx = off.getContext('2d');
+  var img = octx.createImageData(F.N, F.N);
+  var ctx = cv.getContext('2d');
+
+  var st = {
+    axis: 1, dir: -1, strength: 1.0,
+    px: 0.5, py: 0.5, down: false, inside: false,
+    dose: 0, msAcc: 0, op: [0, 0, 0, 0, 0, 0], opTonic: 0,
+    baseStart: null, meanStart: null, pending: false, relT: 0, quiet: 0,
+    lastE0: null, lastWrite: null, frameMs: 0, lastNow: 0, acc: 0, stale: true,
+    err: null
+  };
+
+  function el(id) { return document.getElementById(id); }
+  function clamp(v, a, b) { return v < a ? a : (v > b ? b : v); }
+  function keyOf(a) { return a.map(function (v) { return v.toFixed(3); }).join(','); }
+
+  /* ---------------- 面板 ---------------- */
+  function buildPanel() {
+    var dirBox = el('sbFieldDir'), axBox = el('sbFieldAxis');
+    [['泻', -1, '祛邪：局部清除该气，场被挖开'], ['补', 1, '扶正：局部提升自愈，整体收敛加快']].forEach(function (d) {
+      var b = document.createElement('button');
+      b.id = 'sbFieldDir_' + d[1]; b.textContent = d[0]; b.title = d[2];
+      b.onclick = function () { st.dir = d[1]; syncBtns(); F.clearKernel(); wake(); };
+      dirBox.appendChild(b);
+    });
+    AXF.forEach(function (a, i) {
+      var b = document.createElement('button');
+      b.id = 'sbFieldAx_' + a; b.textContent = a;
+      b.onclick = function () { st.axis = i; var q = F.blobPos(i); st.px = q.x; st.py = q.y; syncBtns(); F.clearKernel(); wake(); };
+      axBox.appendChild(b);
+    });
+    var sl = el('sbFieldStrength');
+    sl.oninput = function () { st.strength = parseFloat(sl.value) || 1; syncBtns(); };
+    el('sbFieldReset').onclick = function () { resetField(); };
+    el('sbFieldSettle').onclick = function () { settleNow(); };
+    syncBtns();
+  }
+  function syncBtns() {
+    [['sbFieldDir_-1', st.dir < 0], ['sbFieldDir_1', st.dir > 0]].forEach(function (p) {
+      var b = el(p[0]); if (b) b.classList.toggle('on', p[1]);
+    });
+    AXF.forEach(function (a, i) { var b = el('sbFieldAx_' + a); if (b) b.classList.toggle('on', i === st.axis); });
+    el('sbFieldStrengthOut').textContent = '×' + st.strength.toFixed(1);
+    var d = st.dir > 0 ? '补' : '泻', lb = LAB[d][AXF[st.axis]];
+    el('sbFieldLabel').textContent = d + ' · ' + AXF[st.axis] + ' → ' + lb[0];
+    el('sbFieldMech').textContent = lb[1];
+  }
+
+  function hud() {
+    var m = F.means(), pmax = 0;
+    for (var c = 0; c < 6; c++) for (var i = 0; i < F.NN; i++) if (F.u[c][i] > pmax) pmax = F.u[c][i];
+    var bw = F.bval(st.axis, st.px, st.py);
+    var s = '<div class="kv"><span>落点</span><b>' + AXF[st.axis] + '区 · 局部强度 ' + bw.toFixed(2) + '</b>' +
+            '<span>力度</span><b>×' + st.strength.toFixed(1) + '</b>' +
+            '<span>剂量</span><b>' + st.dose.toFixed(2) + '（' + (st.msAcc / 1000).toFixed(1) + ' s）</b></div>';
+    if (st.lastWrite) {
+      var w = st.lastWrite;
+      s += '<div class="kv"><span>写回 E0</span><b style="color:#ffd7b0">' + AXF[w.axis] + ' ' + w.e0old[w.axis].toFixed(3) +
+           ' → ' + w.e0new[w.axis].toFixed(3) + '</b><span>Δ</span><b>' + w.dBase[w.axis].toFixed(3) + '</b>' +
+           '<span>场峰值（场层）</span><b>' + (w.peak0 || 0).toFixed(2) + ' → ' + w.peak1.toFixed(2) + '</b></div>';
+    } else {
+      s += '<div class="kv"><span>写回 E0</span><b style="color:#8b98a5">尚未施治（拖动场面后自动写回）</b></div>';
+    }
+    el('sbFieldRead').innerHTML = s;
+    var any = st.op.some(function (v) { return Math.abs(v) > 1e-9; }) || st.opTonic > 1e-9;
+    /* 六气场强条 */
+    if (!st.bars) {
+      st.bars = [];
+      var box = el('sbFieldBars');
+      for (var bi = 0; bi < 6; bi++) {
+        var row = document.createElement('div'); row.className = 'fldbar';
+        row.innerHTML = '<span class="n">' + AXF[bi] + '</span><i><b></b></i><span class="v"></span>';
+        var cc = COL[bi];
+        row.querySelector('.n').style.color = 'rgb(' + Math.round(cc[0] * 255) + ',' +
+          Math.round(cc[1] * 255) + ',' + Math.round(cc[2] * 255) + ')';
+        row.querySelector('b').style.background = 'linear-gradient(90deg,rgba(' +
+          Math.round(cc[0] * 255) + ',' + Math.round(cc[1] * 255) + ',' + Math.round(cc[2] * 255) + ',0.45),rgb(' +
+          Math.round(cc[0] * 255) + ',' + Math.round(cc[1] * 255) + ',' + Math.round(cc[2] * 255) + '))';
+        box.appendChild(row);
+        st.bars.push({ b: row.querySelector('b'), v: row.querySelector('.v'), row: row });
+      }
+    }
+    var bs = F.getBase();
+    for (var ci = 0; ci < 6; ci++) {
+      var pct = Math.max(0, Math.min(100, bs[ci] / 1.5 * 100));
+      st.bars[ci].b.style.width = pct.toFixed(1) + '%';
+      st.bars[ci].v.textContent = bs[ci].toFixed(2);
+      st.bars[ci].row.className = 'fldbar' + (ci === st.axis ? ' cur' : '') + (bs[ci] > 0.005 ? '' : ' nil');
+    }
+    el('sbFieldStats').innerHTML =
+      '网格 ' + F.N + '×' + F.N + ' · 每帧 ' + SUB + ' 子步 · 单帧重解 <b>' +
+      (st.frameMs > 0.01 ? st.frameMs.toFixed(2) + ' ms' : '—') + '</b>｜' +
+      '显示：' + AXF[st.axis] + ' 通道（其余按 0.45 叠加）｜' +
+      '场峰值 ' + pmax.toFixed(3) + '｜振荡 vmax ' + F.vmax().toExponential(1) + '（松手后按自愈项衰减）｜' +
+      (any ? '<span style="color:#ffd7b0">方外手法已计入：' + opText() + '</span>'
+           : '方外手法：无（仅本方案力）');
+  }
+  function opText() {
+    var t = [];
+    for (var i = 0; i < 6; i++) if (Math.abs(st.op[i]) > 1e-9) t.push('netEff[' + AXF[i] + '] ' + st.op[i].toFixed(2));
+    if (st.opTonic > 1e-9) t.push('tonic +' + st.opTonic.toFixed(3));
+    return t.join('，');
+  }
+
+  /* ---------------- 拖动 ---------------- */
+  function pos(e) {
+    var r = cv.getBoundingClientRect();
+    return { x: clamp((e.clientX - r.left) / r.width, 0, 1), y: clamp((e.clientY - r.top) / r.height, 0, 1) };
+  }
+  function startAt(px, py) {
+    st.px = px; st.py = py; st.inside = true;
+    st.down = true; st.dose = 0; st.msAcc = 0; st.pending = false; st.relT = 0; st.quiet = 0; st.lastWrite = null;
+    st.baseStart = F.getBase(); st.meanStart = F.means(); st.peakStart = maxOf(st.axis);
+    F.setKernel(st.px, st.py); F.setPush(st.axis, st.dir, st.strength);
+  }
+  function endAt() {
+    if (!st.down) return false;
+    st.down = false; F.clearPush(); F.clearKernel();
+    if (st.dose > 1e-4) { st.pending = true; st.relT = 0; st.quiet = 0; }
+    return true;
+  }
+  function beginDrag(e) {
+    var p = pos(e); startAt(p.x, p.y);
+    try { cv.setPointerCapture(e.pointerId); } catch (err) {}
+    e.preventDefault();
+  }
+  function moveDrag(e) {
+    var p = pos(e); st.px = p.x; st.py = p.y; st.inside = true;
+    if (st.down) { F.setKernel(st.px, st.py); F.setPush(st.axis, st.dir, st.strength); }
+    else if (st.lastWrite === null) { /* 悬浮不作用 */ }
+  }
+  function endDrag(e) {
+    endAt();
+    try { cv.releasePointerCapture(e.pointerId); } catch (err) {}
+  }
+  cv.addEventListener('pointerdown', beginDrag);
+  cv.addEventListener('pointermove', moveDrag);
+  cv.addEventListener('pointerup', endDrag);
+  cv.addEventListener('pointercancel', endDrag);
+  cv.addEventListener('pointerleave', function () { st.inside = false; if (st.down) { /* 移出仍继续（pointer capture） */ } });
+
+  /* 剂量积分：真实拖动与自动化 pushSim 共用同一段 */
+  function dragStep(dtR) {
+    var bw = F.bval(st.axis, st.px, st.py);
+    var eff = st.strength * bw;
+    st.dose += eff * dtR; st.msAcc += dtR * 1000;
+    var b = F.getBase();
+    var k = (st.dir > 0) ? KB * KBc : KB;
+    b[st.axis] = Math.max(0, b[st.axis] - k * eff * dtR);
+    F.setBase(b);
+    if (st.dir > 0) st.opTonic += KT * eff * dtR;
+    else st.op[st.axis] -= KN * eff * dtR;
+  }
+
+  /* ---------------- 写回 ---------------- */
+  function doWriteback() {
+    var b = F.getBase(), e = (sb && sb.E0) ? sb.E0.slice() : b.slice();
+    var e0 = e.slice(), mn = F.means(), dBase = [], dMean = [];
+    for (var i = 0; i < 6; i++) {
+      dBase.push(b[i] - (st.baseStart ? st.baseStart[i] : b[i]));
+      dMean.push(mn[i] - (st.meanStart ? st.meanStart[i] : mn[i]));
+      e[i] = clamp(e[i] + dBase[i], 0, 1.5);
+    }
+    if (sb) {
+      sb.E0 = e; sb.preset = null;
+      if (typeof sbTouch === 'function') sbTouch();          // 状态已变 → 旧揭示作废（沿用 v0.3 纪律）
+      if (typeof sbSyncSliders === 'function') sbSyncSliders();
+    }
+    F.setBase(e); st.lastE0 = keyOf(e);
+    st.lastWrite = { axis: st.axis, dir: st.dir, dose: st.dose, dBase: dBase, dMean: dMean,
+                     e0old: e0, e0new: e.slice(), peak0: st.peakStart || 0, peak1: maxOf(st.axis) };
+    st.pending = false;
+    st.baseStart = F.getBase(); st.meanStart = F.means();
+  }
+  function settleNow() {
+    if (!st.pending && st.dose <= 1e-4) return { ok: false, err: '本次没有可写回的剂量' };
+    doWriteback();
+    return { ok: true, write: st.lastWrite };
+  }
+  function resetField() {
+    if (sb) F.setBase(sb.E0);
+    F.zero(); F.clearPush(); F.clearKernel();
+    st.op = [0, 0, 0, 0, 0, 0]; st.opTonic = 0; st.dose = 0;
+    st.pending = false; st.lastWrite = null; st.down = false; st.lastE0 = null;
+    wake();
+  }
+  function wake() { st.acc = 1; st.stale = true; }
+
+  /* ---------------- 渲染 ---------------- */
+  function tone(x) { return 1 - Math.exp(-1.55 * x); }
+  function render() {
+    var dat = img.data, va = st.axis, k, c, v, w, r, g, b, p;
+    for (k = 0; k < F.NN; k++) {
+      r = 0; g = 0; b = 0;
+      for (c = 0; c < 6; c++) {
+        v = F.u[c][k]; if (v <= 0.002) continue;
+        w = (c === va) ? 1.0 : 0.45;
+        r += COL[c][0] * v * w; g += COL[c][1] * v * w; b += COL[c][2] * v * w;
+      }
+      p = k * 4;
+      dat[p] = (11 + 244 * tone(r)) | 0;
+      dat[p + 1] = (15 + 240 * tone(g)) | 0;
+      dat[p + 2] = (20 + 235 * tone(b)) | 0;
+      dat[p + 3] = 255;
+    }
+    octx.putImageData(img, 0, 0);
+    ctx.clearRect(0, 0, SZ, SZ);
+    ctx.imageSmoothingEnabled = true;
+    try { ctx.filter = 'blur(1.2px)'; } catch (e2) {}
+    ctx.drawImage(off, 0, 0, F.N, F.N, 0, 0, SZ, SZ);
+    try { ctx.filter = 'none'; } catch (e3) {}
+    drawGuides();
+    drawContours(va);
+    drawCursor();
+  }
+  function drawGuides() {
+    var sc = SZ, i, p0, act, base = F.getBase(), rr = F.cfg.sigma * SZ * 1.45;
+    ctx.save();
+    /* 六边形骨架 */
+    ctx.strokeStyle = 'rgba(120,150,180,0.12)'; ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (i = 0; i < 6; i++) {
+      p0 = F.blobPos(i); if (i === 0) ctx.moveTo(p0.x * sc, p0.y * sc); else ctx.lineTo(p0.x * sc, p0.y * sc);
+    }
+    ctx.closePath(); ctx.stroke();
+    /* 每个气域的域环（半径固定，强度由内部场本身表达）+ 名称 + 当前带量 */
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    for (i = 0; i < 6; i++) {
+      p0 = F.blobPos(i); act = (i === st.axis);
+      ctx.beginPath(); ctx.arc(p0.x * sc, p0.y * sc, rr, 0, Math.PI * 2);
+      var aRing = 0.17 + 0.26 * Math.min(1, base[i] / 1.2);
+      ctx.strokeStyle = act ? 'rgba(255,214,170,0.55)' : 'rgba(160,185,210,' + aRing.toFixed(3) + ')';
+      ctx.lineWidth = act ? 1.4 : 1;
+      ctx.setLineDash(act ? [] : [3, 5]); ctx.stroke(); ctx.setLineDash([]); ctx.lineWidth = 1;
+      var dx = (p0.x - 0.5) * 58, dy = (p0.y - 0.5) * 58;
+      var lx = p0.x * sc + dx, ly = p0.y * sc + dy;
+      ctx.font = (act ? 'bold ' : '') + (act ? 20 : 17) + 'px -apple-system,"PingFang SC",sans-serif';
+      ctx.fillStyle = act ? 'rgba(255,238,218,0.96)' : 'rgba(205,220,235,0.62)';
+      ctx.fillText(AXF[i], lx, ly - 7);
+      ctx.font = '11.5px -apple-system,"PingFang SC",sans-serif';
+      ctx.fillStyle = act ? 'rgba(255,214,170,0.9)' : 'rgba(170,190,210,0.5)';
+      ctx.fillText(base[i].toFixed(2), lx, ly + 10);
+    }
+    ctx.restore();
+  }
+  function ip(a, b, lv) { var d = b - a; return Math.abs(d) < 1e-9 ? 0.5 : (lv - a) / d; }
+  function drawContours(ch) {
+    var U = F.u[ch], pmax = 0, i;
+    for (i = 0; i < F.NN; i++) if (U[i] > pmax) pmax = U[i];
+    if (pmax < 0.06) return;
+    var sc = SZ / (F.N - 1), lv, kk, x, y, a, b, c2, d2, idx,
+        e0x, e0y, e1x, e1y, e2x, e2y, e3x, e3y;
+    ctx.save(); ctx.lineWidth = 1;
+    for (var L = 0; L < 3; L++) {
+      lv = pmax * [0.32, 0.58, 0.82][L];
+      ctx.strokeStyle = 'rgba(235,245,255,' + [0.16, 0.26, 0.4][L] + ')';
+      ctx.beginPath();
+      for (y = 0; y < F.N - 1; y++) {
+        for (x = 0; x < F.N - 1; x++) {
+          kk = y * F.N + x;
+          a = U[kk]; b = U[kk + 1]; c2 = U[kk + F.N + 1]; d2 = U[kk + F.N];
+          idx = (a > lv ? 1 : 0) | (b > lv ? 2 : 0) | (c2 > lv ? 4 : 0) | (d2 > lv ? 8 : 0);
+          if (idx === 0 || idx === 15) continue;
+          e0x = x + ip(a, b, lv); e0y = y;
+          e1x = x + 1; e1y = y + ip(b, c2, lv);
+          e2x = x + ip(d2, c2, lv); e2y = y + 1;
+          e3x = x; e3y = y + ip(a, d2, lv);
+          switch (idx) {
+            case 1: case 14: ctx.moveTo(e3x * sc, e3y * sc); ctx.lineTo(e0x * sc, e0y * sc); break;
+            case 2: case 13: ctx.moveTo(e0x * sc, e0y * sc); ctx.lineTo(e1x * sc, e1y * sc); break;
+            case 3: case 12: ctx.moveTo(e3x * sc, e3y * sc); ctx.lineTo(e1x * sc, e1y * sc); break;
+            case 4: case 11: ctx.moveTo(e1x * sc, e1y * sc); ctx.lineTo(e2x * sc, e2y * sc); break;
+            case 6: case 9:  ctx.moveTo(e0x * sc, e0y * sc); ctx.lineTo(e2x * sc, e2y * sc); break;
+            case 7: case 8:  ctx.moveTo(e2x * sc, e2y * sc); ctx.lineTo(e3x * sc, e3y * sc); break;
+            case 5:  ctx.moveTo(e3x * sc, e3y * sc); ctx.lineTo(e2x * sc, e2y * sc);
+                     ctx.moveTo(e0x * sc, e0y * sc); ctx.lineTo(e1x * sc, e1y * sc); break;
+            case 10: ctx.moveTo(e0x * sc, e0y * sc); ctx.lineTo(e3x * sc, e3y * sc);
+                     ctx.moveTo(e1x * sc, e1y * sc); ctx.lineTo(e2x * sc, e2y * sc); break;
+          }
+        }
+      }
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+  function drawCursor() {
+    if (!st.inside) return;
+    var x = st.px * SZ, y = st.py * SZ, r = F.cfg.kernR * SZ;
+    ctx.save();
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(4,7,10,0.55)'; ctx.lineWidth = st.down ? 5.5 : 4; ctx.stroke();
+    ctx.strokeStyle = (st.dir > 0) ? 'rgba(255,178,102,1)' : 'rgba(130,232,255,1)';
+    ctx.lineWidth = st.down ? 2.6 : 1.5;
+    ctx.setLineDash(st.down ? [] : [5, 5]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = 'rgba(255,255,255,0.95)';
+    ctx.beginPath(); ctx.arc(x, y, 2.6, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  }
+
+  /* ---------------- 主循环（挂在页面已有 rAF 上） ---------------- */
+  function tick() {
+    if (st.paused) return;
+    if (typeof mode !== 'undefined' && mode !== 'sandbox') return;
+    var dtR = 1 / 60;                     // 定步长：场的时间轴与墙上时钟解耦，可复现
+
+    /* 沙盘滑块/预设变化的观察者：外部改 E0 → 场源项跟着改（双向同步） */
+    if (sb) {
+      var kk = keyOf(sb.E0);
+      if (!st.down && kk !== st.lastE0) { st.lastE0 = kk; F.setBase(sb.E0); }
+    }
+
+    if (!st.down && st.pending) {
+      st.relT += dtR;
+      st.quiet = (F.vmax() < 2e-3) ? st.quiet + 1 : 0;
+      if (st.quiet > 10 || st.relT > 2.5) doWriteback();
+    }
+    if (st.down) dragStep(dtR);
+
+    /* 帧推进：每帧 4 子步重解；静止后跳过以省电，一有扰动立即恢复 */
+    var animating = st.down || st.pending || F.vmax() > 2e-4 || st.stale;
+    if (animating) {
+      var t0 = (typeof performance !== 'undefined') ? performance.now() : Date.now();
+      F.step(SUB);
+      st.frameMs = ((typeof performance !== 'undefined') ? performance.now() : Date.now()) - t0;
+      st.stale = false;
+      render();
+    }
+    st.tick = (st.tick || 0) + 1;
+    if (animating || st.tick % 6 === 0) hud();
+  }
+
+  (function () { var q0 = F.blobPos(st.axis); st.px = q0.x; st.py = q0.y; })();
+  buildPanel(); resetField();
+  for (var wi = 0; wi < 70; wi++) tick();   // 首屏预热到近平衡（≈70 帧），保证任何环境（含无定时器的 headless）第一帧就有场
+  render(); hud();
+
+  /* ---------------- 自动化钩子 ---------------- */
+  window.sbFieldOp = function () {
+    var any = st.op.some(function (v) { return Math.abs(v) > 1e-9; }) || st.opTonic > 1e-9;
+    return { dNet: st.op.slice(), tonic: st.opTonic, dose: st.dose, active: any };
+  };
+  window.__field = {
+    N: F.N, SUB: SUB, AX: AXF, LAB: LAB, CFG: F.cfg, COEF: { KB: KB, KBc: KBc, KN: KN, KT: KT, KF: KF },
+    blob: function (ch) { return F.blobPos(ch); },
+    setSel: function (axis, dir, strength) {
+      st.axis = (typeof axis === 'number') ? axis : AXF.indexOf(axis);
+      st.dir = (dir === 1 || dir === '+' || dir === '补') ? 1 : -1;
+      if (strength) st.strength = strength;
+      syncBtns(); return { axis: st.axis, dir: st.dir, strength: st.strength };
+    },
+    /* 定长、与墙上时钟无关：复位→预热→拖 ms→收敛→写回 */
+    pushSim: function (axis, dir, strength, px, py, ms, opts) {
+      var o = opts || {};
+      st.axis = (typeof axis === 'number') ? axis : AXF.indexOf(axis);
+      st.dir = (dir === 1 || dir === '+' || dir === '补') ? 1 : -1;
+      st.strength = strength || 1;
+      var warm = o.warm === undefined ? 150 : o.warm;
+      F.setBase((sb && sb.E0) ? sb.E0.slice() : [0.8, 0.9, 0, 0, 0, 0]);
+      F.zero(); for (var i = 0; i < warm; i++) F.step(SUB);
+      var base0 = F.getBase(), mean0 = F.means(), hash0 = F.hash();
+      st.px = px; st.py = py; st.down = true; st.dose = 0; st.msAcc = 0;
+      st.baseStart = base0; st.meanStart = mean0; st.pending = false; st.peakStart = maxOf(st.axis);
+      F.setKernel(px, py); F.setPush(st.axis, st.dir, st.strength);
+      var n = Math.max(1, Math.round((ms || 1000) / 16.6667));
+      for (var f2 = 0; f2 < n; f2++) { F.step(SUB); dragStep(1 / 60); }
+      var snapDrag = F.snapshot(st.axis, 10, 10), vDrag = F.vmax(), peakDrag = maxOf(st.axis);
+      F.clearPush(); F.clearKernel(); st.down = false;
+      var curve = [], q, s = 0;
+      for (q = 1; q <= 120; q++) { F.step(SUB); if (q % 10 === 0) curve.push(Number(F.vmax().toExponential(3))); }
+      while (s < 300 && F.vmax() > 2e-3) { F.step(SUB); s++; }
+      s += 120;
+      var snapSettle = F.snapshot(st.axis, 10, 10);
+      var baseEnd = F.getBase();
+      if (st.dose > 1e-4) doWriteback();
+      render(); hud();
+      return {
+        axis: st.axis, axis_name: AXF[st.axis], dir: st.dir, strength: st.strength, px: px, py: py, ms: ms,
+        dose: Number(st.dose.toFixed(4)), ms: Math.round(st.msAcc),
+        bval_at_point: Number(F.bval(st.axis, px, py).toFixed(4)),
+        hash0: hash0, hash_drag: snapDrag.hash, hash_settle: snapSettle.hash,
+        peak_drag: peakDrag, peak_settle: maxOf(st.axis),
+        vmax_drag: Number(vDrag.toFixed(5)), settle_frames: s, decay_curve: curve,
+        writeback_peak: st.lastWrite ? { peak0: Number(st.lastWrite.peak0.toFixed(4)), peak1: Number(st.lastWrite.peak1.toFixed(4)) } : null,
+        means0: mean0.map(function (v) { return Number(v.toFixed(6)); }),
+        means_drag: snapDrag.means, means_settle: snapSettle.means,
+        block10: snapDrag.block, block10_settle: snapSettle.block,
+        base_delta: baseEnd.map(function (v, i2) { return Number((v - base0[i2]).toFixed(6)); }),
+        E0_after: (sb ? sb.E0.slice() : null),
+        write: st.lastWrite ? { dBase: st.lastWrite.dBase.map(function (v) { return Number(v.toFixed(4)); }),
+                                dMean: st.lastWrite.dMean.map(function (v) { return Number(v.toFixed(6)); }) } : null,
+        op: st.op.map(function (v) { return Number(v.toFixed(4)); }), opTonic: Number(st.opTonic.toFixed(4)),
+        finite: F.finite()
+      };
+    },
+    /* 连续帧推进（真实路径，含渲染耗时）*/
+    bench: function (frames) {
+      var t0 = performance.now(), n = frames || 200;
+      for (var i = 0; i < n; i++) { F.step(SUB); render(); }
+      var ms = (performance.now() - t0) / n;
+      return { frames: n, grid: F.N, sub: SUB, cells: F.NN * 6, ms_per_frame: Number(ms.toFixed(3)) };
+    },
+    /* 只算不渲染，单独看求解开销 */
+    benchSolve: function (frames) {
+      var t0 = performance.now(), n = frames || 200;
+      for (var i = 0; i < n; i++) F.step(SUB);
+      return { frames: n, ms_per_frame: Number(((performance.now() - t0) / n).toFixed(3)) };
+    },
+    reset: function () { resetField(); return { ok: true, E0: sb ? sb.E0.slice() : null }; },
+    pause: function () { st.paused = true; return true; },
+    resume: function () { st.paused = false; st.stale = true; return true; },
+    press: function (axis, dir, strength, px, py) {
+      st.axis = (typeof axis === 'number') ? axis : AXF.indexOf(axis);
+      st.dir = (dir === 1 || dir === '+' || dir === '补') ? 1 : -1;
+      st.strength = strength || 1; syncBtns();
+      startAt(px === undefined ? F.blobPos(st.axis).x : px, py === undefined ? F.blobPos(st.axis).y : py);
+      return F.getPush();
+    },
+    release: function () { var r = endAt(); return { released: r, dose: Number(st.dose.toFixed(4)), pending: st.pending }; },
+    render: function () { render(); hud(); return true; },
+    settle: function () { return settleNow(); },
+    clearOps: function () { st.op = [0, 0, 0, 0, 0, 0]; st.opTonic = 0; return { ok: true }; },
+    snapshot: function (ch) { return F.snapshot(ch === undefined ? st.axis : ch, 10, 10); },
+    hash: function () { return F.hash(); },
+    means: function () { return F.means(); },
+    tick: function (frames) { for (var i = 0; i < (frames || 1); i++) tick(); return true; },
+    state: function () {
+      return {
+        axis: st.axis, axis_name: AXF[st.axis], dir: st.dir, strength: st.strength,
+        dose: Number(st.dose.toFixed(4)), down: st.down, pending: st.pending,
+        op: st.op.map(function (v) { return Number(v.toFixed(4)); }), opTonic: Number(st.opTonic.toFixed(4)),
+        lastWrite: st.lastWrite ? { axis: st.lastWrite.axis, dir: st.lastWrite.dir,
+          dBase: st.lastWrite.dBase.map(function (v) { return Number(v.toFixed(4)); }),
+          dMean: st.lastWrite.dMean.map(function (v) { return Number(v.toFixed(6)); }),
+          e0old: st.lastWrite.e0old.map(function (v) { return Number(v.toFixed(4)); }),
+          e0new: st.lastWrite.e0new.map(function (v) { return Number(v.toFixed(4)); }),
+          peak0: Number((st.lastWrite.peak0||0).toFixed(4)), peak1: Number(st.lastWrite.peak1.toFixed(4)) } : null,
+        frameMs: Number(st.frameMs.toFixed(3)), vmax: Number(F.vmax().toExponential(3)),
+        ticks: st.tick || 0, err: st.err,
+        peak: maxOf(st.axis), means: F.means().map(function (v) { return Number(v.toFixed(6)); }),
+        label: el('sbFieldLabel') ? el('sbFieldLabel').textContent : '',
+        mech: el('sbFieldMech') ? el('sbFieldMech').textContent : '',
+        read: el('sbFieldRead') ? el('sbFieldRead').innerText : '',
+        stats: el('sbFieldStats') ? el('sbFieldStats').innerText : '',
+        canvas_painted: painted(), finite: F.finite()
+      };
+    },
+    hook: function (name) { return typeof window[name] === 'function'; }
+  };
+  function maxOf(ch) { var m = 0, U = F.u[ch]; for (var i = 0; i < F.NN; i++) if (U[i] > m) m = U[i]; return Number(m.toFixed(5)); }
+  function painted() {
+    try { var d = ctx.getImageData(0, 0, SZ, SZ).data, n = 0;
+      for (var i = 0; i < d.length; i += 4) if (d[i] + d[i + 1] + d[i + 2] > 60) n++;
+      return n; } catch (e) { return -1; }
+  }
+  /* 双驱动：可见标签页走 rAF（与刷新率对齐）；rAF 不可用（headless / 后台标签）时退回 16 ms 定时器。
+     定步长 1/60，场的时间轴与墙上时钟解耦，可复现。静止后 tick 内部自动跳过重解。 */
+  var rafAlive = false;
+  (function rafLoop() {
+    if (typeof requestAnimationFrame !== 'function') return;
+    requestAnimationFrame(function (ts) {
+      rafAlive = true;
+      try { tick(); } catch (e) { st.err = String(e); }
+      rafLoop();
+    });
+  })();
+  setInterval(function () {
+    if (rafAlive) return;
+    try { tick(); } catch (e) { st.err = String(e); }
+  }, 16);
+  /* 标签页转入后台时若还有待写回剂量，立即结算，避免「拖完切走 → 写回丢失」 */
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden && st.pending) { try { doWriteback(); render(); hud(); } catch (e) { st.err = String(e); } }
+  });
+})();
+//[[/SB_FIELD]]
+
+/* 供自动化核对：沙盘调试钩子 */
+window.__sandbox = {
+  setE0:(ax,val)=>{ const i=(typeof ax==="number")? ax : AXES.indexOf(String(ax));
+    if(i<0||i>5) return {ok:false, err:"轴需为 风/寒/暑/湿/燥/火 或 0–5"};
+    sb.E0[i]=Math.max(0, Math.min(1.5, Number(val)||0)); sb.preset=null; sbTouch(); sbSyncSliders();
+    return {ok:true, axis:AXES[i], E0:sb.E0.slice()}; },
+  loadPreset:(name)=>sbLoadPreset(name),
+  loadBase:(cn,kind)=>sbLoadBase(cn,kind),
+  addHerb:(name,role,mult)=>sbAddHerb(name,role,mult),
+  removeHerb:(name)=>sbRemoveHerb(name),
+  clearHerbs:()=>{ sb.herbs=[]; sbTouch(); sbSyncHerbs(); return {ok:true, herbs:[]}; },
+  setForm:(f)=>{ if(!(f in FORMS)) return {ok:false, err:"剂型需为 汤/散/丸/膏/丹"};
+    sb.form=f; sbTouch(); sbSyncHerbs(); return {ok:true, form:f, tau:FORMS[f]}; },
+  setCourse:(n)=>{ const v=Math.max(1,Math.min(30,Math.round(Number(n)||5))); sb.course=v; sbTouch(); sbRefresh();
+    return {ok:true, course:v}; },
+  run:()=>{ const r=sbRunOnly();
+    return {ok:true, E0:sb.E0.slice(), herbs:sb.herbs.map(h=>h.name+"("+h.role+"×"+h.mult+")"),
+            form:sb.form, course:sb.course, days:SB_DAYS,
+            ratio:Number(r.ratio.toFixed(6)), absE:Number(r.absE.toFixed(6)), n0:Number(r.n0.toFixed(6)),
+            half_day:r.half_day, recover_day:r.recover_day,
+            daily_ratio:r.daily.map(d=>Number(d.ratio.toFixed(6))), daily_absE:r.daily.map(d=>Number(d.absE.toFixed(6))),
+            E_end:r.E.map(v=>Number(v.toFixed(6)))}; },
+  expect:(halfDays,recoverDays,note)=>{ sbEl("sbHalf").value=halfDays; sbEl("sbRecover").value=recoverDays;
+    if(note!==undefined) sbEl("sbWhy").value=note;
+    return {ok:true, half_days:halfDays, recover_days:recoverDays}; },
+  submit:()=>sbSubmit(),
+  state:()=>({ mode:mode, stage:sb.stage, preset:sb.preset, E0:sb.E0.slice(),
+      herbs:sb.herbs.map(h=>({name:h.name,role:h.role,mult:h.mult})), form:sb.form, course:sb.course,
+      expect:sb.expect, revealed:sb.revealed, elapsed_ms:sb.elapsed,
+      engine: sb.sim? {residual_ratio:Number(sb.sim.ratio.toFixed(6)), half_day:sb.sim.half_day,
+                       recover_day:sb.sim.recover_day, verdict:bVerdict(sb.sim.ratio)} : null,
+      diff_max: sb.diff? sb.diff.max : null, records:sbRecords().length,
+      reveal_hidden: sbEl("sbRevealCard").style.display==="none" }),
+  export:()=>sbExport(),
+  exportAll:()=>exportAll(),
+  download:()=>sbDownload(),
+  dataCount:()=>sbRecords().length,
+  clear:()=>{ try{ B_STORE.removeItem(SBKEY); }catch(e){} try{ bRenderCount(); }catch(e){} return sbRecords().length; },
+  mode:(m)=>{ setMode(m); return mode; },
+  formulaNet:(list)=>formulaNet(list),
+  SBKEY, SB_DAYS, SB_MULTS, SB_ROLES, SB_HERBS, AXES, FORMS, CASES_KEYS:Object.keys(CASES)
+};
+
+/* 供自动化核对：盲测调试钩子 */
+window.__blind = {
+  setCase:(n)=>bSetCase(n),
+  choose:(id)=>bChoose(id),
+  predict:(k)=>bPredict(k),
+  quiz:(a)=>bQuiz(a),
+  answerQuiz:(a)=>bQuiz(a),
+  submit:()=>bSubmit(),
+  state:()=>({stage:bState.stage, case_idx:bState.caseIdx, case_no:bState.caseIdx+1, case_name:bState.caseName,
+              slots:bState.slots, choice:bState.choice, predicted:bState.predicted, quiz_answer:bState.quizAns,
+              elapsed_ms:bState.elapsed, revealed:bState.revealed, records:bRecords().length, mode:mode}),
+  export:()=>bExport(),
+  download:()=>bDownload(),
+  dataCount:()=>bRecords().length,
+  clear:()=>{ try{ B_STORE.removeItem(BKEY); }catch(e){} bRenderCount(); return bRecords().length; },
+  mode:(m)=>{ setMode(m); return mode; },
+  BCASES, QUIZ, PRED, BKEY
+};
+
+/* 供自动化核对 */
+window.__engine = { step:(n=500)=>{ for(let i=0;i<n;i++) step(dt); return {E:E.slice(), ratio:Math.hypot(...E)/Math.hypot(...E0)}; },
+  setCase:(name,bad)=>{ curCase=name; useBad=!!bad; setCase(); }, setForm:f=>{ form=f; applyFormula(); },
+  AXES, state:()=>({E0, E, t, form, net}) };
+</script>
+</body>
+</html>
