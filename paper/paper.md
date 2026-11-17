@@ -209,10 +209,102 @@ python tests/smoke.py                  # asserts the ordering in Table 1
 
 The sensitivity analysis is seeded (20261117); Figure 4 and the percentages in §4.2 are reproduced exactly.
 
+# 9. Priority, prior art, and defensive-publication statement
+
+This section exists because the work is published **instead of patented**. It states what is claimed, what is
+explicitly *not* claimed, what prior art was found when we looked, and the documentary basis for the date.
+
+## 9.1 What is claimed (elements E1–E5)
+
+Each element is identified by where it is disclosed, so a reader can check that the disclosure is enabling and
+that the date is not retrospective.
+
+| # | Element | Disclosed at |
+|---|---|---|
+| **E1** | A six-axis state vector over the six pathogenic factors (wind / cold / summer-heat / damp / dryness / fire) representing one treated episode, with herb vectors derived from four-nature and five-flavour by an explicit published coefficient set | §2.1–2.2; `engine/tcm_energy_sim.py::drug_vector` |
+| **E2** | Dosage form implemented as a release time constant inside the dynamics — decoction 1.0, powder 1.5, pellet 3.0, pill 4.0, paste 6.0 — with dosing as a pulsed input through that constant | §2.4; `DOSE_TAU` |
+| **E3** | A continuous-time decomposition of the clinical course into self-healing decay, a sparse pathogenesis-transmission matrix, and a drug-gain term: *dE/dt* = −k₀·*E* + *M*·*E* + α·*D*<sub>eff</sub>·pulse(*t*) | §2.5 |
+| **E4** | Four qualitative treatment rules implemented as dynamical terms: dose gated by remaining illness; wrong treatment amplifying transmission (×1.8) while halving self-healing (×0.5); cold-bitter herbs aggravating cold-damp; pungent-warm herbs fuelling an already-flourishing fire | §2.5 table; `simulate()` |
+| **E5** | A machine-readable operator contract for external therapies (acupuncture, electroacupuncture, moxibustion, tuina, guasha, cupping) in which the parameter-to-axis mapping is deliberately left as contributed data rather than hard-coded, together with schemas and a privacy-linted contribution pipeline | `engine/external_therapy.py`, `schema/*.json`, `tools/validate_contribution.py` |
+
+## 9.2 Prior art found, and what is not claimed
+
+**We do not claim to be first to formalise TCM as a state space with operators.** That step is already in the
+literature, and the closest work appeared two months before this record:
+
+- Dong Y, Wan X, Deng K, Peng C, Luo M. *Formalization, structural representation, and construction of
+  equivalent mathematical expressions for basic theories of traditional Chinese medicine.* Digital Chinese
+  Medicine, published 2026-09-01. doi:10.1016/j.dcmed.2026.08.001. — an n-dimensional state space **S**, a
+  constitutional baseline **B**, a state-correction operator **O**, a harmonisation coefficient α and
+  compatibility coefficients λ, with a first-order affine transition and a Guizhi Tang worked example.
+  Differences from the present work: their transition is a **single discrete step**, not a time-integrated
+  course; there is no self-healing term, no transmission matrix, no dosage-form time constant, no treatment
+  rules, no implementation, and no falsification criteria.
+
+Earlier work in the same direction, acknowledged rather than disputed:
+
+- 翟忠信. 中医阴阳学说的一个数学模型. 数理医药学杂志, 1999(4):302–304. — a two-variable ODE model of yin–yang
+  with stability analysis.
+- 五行理论的数学模型及其微分方程组的通解. 四川中医, 2006(11). — ODE system for the five phases.
+- Release-kinetics studies of TCM dosage forms in the pharmaceutics literature (e.g. 张建国, 周玲. 中药在人体内
+  释放过程的研究. 盐城工学院学报(自然科学版), 2007, 20(4):55–59), which model release physically but do not
+  use the dosage form as a time constant inside a syndrome dynamics.
+- Adjacent patent art on mapping symptoms and prescriptions into structured vectors for state-transition
+  mining, e.g. CN120600335A (dynamic-efficacy-feedback sequential-diagnosis logic mining). This is cited to
+  show the neighbourhood is occupied; E1–E5 are not read onto it.
+
+So the claim is **narrow and additive**: E1–E5, as specified above, disclosed in this record on the date below.
+We make no claim to the general idea, to any specific coefficient value, or to any clinical effect.
+
+## 9.3 Search basis
+
+Searched on 2026-11-17 with a general web index and DOI landing pages, using, among others:
+"ordinary differential equation model traditional Chinese medicine syndrome dynamics";
+"TCM state space state-correction operator";
+"中药剂型 释放 动力学 时间常数 证候 演化";
+plus citation chasing from the Dong et al. paper. **No systematic patent-database search was performed**; the
+patent cited above was found incidentally. This is a good-faith prior-art check by non-lawyers, not a
+freedom-to-operate opinion.
+
+## 9.4 Defensive-publication notice
+
+> **Defensive publication notice.** This work is published as a deliberate public disclosure intended to
+> constitute prior art under 35 U.S.C. §102 and corresponding provisions worldwide. No patent protection is
+> sought or held by the authors for any subject matter disclosed herein, and the authors intend this dated
+> public record to preclude the patenting of the disclosed subject matter by any party. First published
+> 2026-11-17. Archived with DOI 10.5281/zenodo.24296397. The declaration covers elements E1–E5 of §9.1.
+
+Scope. The declaration covers the modelling elements E1–E5 and the artefacts that implement them (engine,
+schemas, operator contract, validator) as they exist in the cited commit. It does not cover, and is not
+intended to cover, any third-party data contributed later to the repository, nor any clinical method not
+described here.
+
+Caveat. Whether a given disclosure bars a particular claim is a question for counsel, not for this document.
+This section records intent, scope and timing; it is not a legal opinion. Publishing also means **the authors
+themselves can no longer obtain patent protection on E1–E5** in jurisdictions where this disclosure is prior
+art — that trade was made deliberately.
+
+## 9.5 Documentary basis
+
+| Item | Value |
+|---|---|
+| Concept DOI (always resolves to the latest version) | 10.5281/zenodo.24296397 |
+| First published version | v1, 2026-11-17 |
+| Source repository | https://github.com/Even-li316/tcm-state-dynamics |
+| Code licence | MIT (explicit patent grant is not implied by MIT; the notice above is the operative statement) |
+| Data contributed later | CC BY 4.0, per `CONTRIBUTING.md` |
+
 # References
 
 1. 张仲景. *伤寒杂病论*. ca. 220 CE. (Syndrome differentiation and formula families; source of the four
    syndromes and of the directional claims in §1.)
 2. 李时珍. *本草纲目*. 1578. (Four-nature / five-flavour attributes used to build the herb vectors.)
 3. *黄帝内经·素问*. compiled ca. 1st century BCE. (Six pathogenic factors; the six-axis vocabulary.)
-4. Source code and figures: https://github.com/Even-li316/tcm-state-dynamics (MIT).
+4. Dong Y, Wan X, Deng K, Peng C, Luo M. Formalization, structural representation, and construction of
+   equivalent mathematical expressions for basic theories of traditional Chinese medicine. *Digital Chinese
+   Medicine*, 2026-09-01. doi:10.1016/j.dcmed.2026.08.001.
+5. 翟忠信. 中医阴阳学说的一个数学模型. *数理医药学杂志*, 1999(4):302-304.
+6. 五行理论的数学模型及其微分方程组的通解. *四川中医*, 2006(11).
+7. 张建国, 周玲. 中药在人体内释放过程的研究. *盐城工学院学报(自然科学版)*, 2007, 20(4):55-59.
+8. CN120600335A. 动态疗效反馈的中医序贯诊疗逻辑挖掘方法、系统及介质 (adjacent patent art, cited in §9.2).
+9. Source code and figures: https://github.com/Even-li316/tcm-state-dynamics (MIT).

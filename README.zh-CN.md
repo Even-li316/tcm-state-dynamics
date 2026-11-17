@@ -1,5 +1,8 @@
 # TSIE · 中医状态动力学推演引擎
 
+> **防御性公开（defensive publication）**：首次发布 2026-11-17，DOI [10.5281/zenodo.24296397](https://doi.org/10.5281/zenodo.24296397)。
+> 本记录所含要素不申请专利，目的是让别人也圈不走。主张了哪五件事、有哪些在先技术、在哪一行公开，见 [PRIORITY.md](PRIORITY.md) 与论文 §9。
+
 [![smoke](https://github.com/Even-li316/tcm-state-dynamics/actions/workflows/ci.yml/badge.svg)](https://github.com/Even-li316/tcm-state-dynamics/actions/workflows/ci.yml)
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.24296397.svg)](https://doi.org/10.5281/zenodo.24296397)
@@ -103,6 +106,7 @@ tools/validate_contribution.py  schema + 隐私扫描，CI 执行
 demo/tcm_engine_demo.html  单文件交互演示（选状态→选方→看轨迹）
 figures/                   生成图与本 README 的动图
 docs/model.md              方程、符号、规则表
+PRIORITY.md                防御性公开声明（主张要素、在先技术、公告）
 tests/smoke.py             一条命令自检
 out/                       运行后生成
 ```

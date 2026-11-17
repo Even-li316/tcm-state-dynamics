@@ -1,5 +1,9 @@
 # TSIE — TCM State-Dynamics Inference Engine
 
+> **Defensive publication.** First published 2026-11-17 (DOI [10.5281/zenodo.24296397](https://doi.org/10.5281/zenodo.24296397)).
+> No patent is sought on the elements disclosed here; the intent is that nobody else can enclose them either.
+> What is claimed, what prior art exists, and the exact disclosure locations are set out in [PRIORITY.md](PRIORITY.md) and §9 of the paper.
+
 [![smoke](https://github.com/Even-li316/tcm-state-dynamics/actions/workflows/ci.yml/badge.svg)](https://github.com/Even-li316/tcm-state-dynamics/actions/workflows/ci.yml)
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.24296397.svg)](https://doi.org/10.5281/zenodo.24296397)
@@ -131,6 +135,7 @@ tools/validate_contribution.py  schema + privacy lint, run in CI
 demo/tcm_engine_demo.html  interactive single-file demo (choose state → formula → watch trajectory)
 figures/                   generated figures + this README's GIF
 docs/model.md              equations, symbols, rule table
+PRIORITY.md                defensive-publication statement (claimed elements, prior art, notice)
 tests/smoke.py             one-command sanity check
 experiments/sensitivity.py parameter-perturbation study
 paper/tsie_preprint.pdf    preprint
