@@ -2,6 +2,7 @@
 
 [![smoke](https://github.com/Even-li316/tcm-state-dynamics/actions/workflows/ci.yml/badge.svg)](https://github.com/Even-li316/tcm-state-dynamics/actions/workflows/ci.yml)
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.24296397.svg)](https://doi.org/10.5281/zenodo.24296397)
 
 **Give it a syndrome state and a formula; it returns a state trajectory and an outcome class — not a paragraph of text.**
 
@@ -26,7 +27,7 @@ converge, persist, or get worse — and when?*
 
 ## Paper
 
-Preprint (PDF, 6 pages): [`paper/tsie_preprint.pdf`](paper/tsie_preprint.pdf) — *A Six-Axis State-Space Model of
+Preprint (6 pages): [doi:10.5281/zenodo.24296397](https://doi.org/10.5281/zenodo.24296397) · local copy [`paper/tsie_preprint.pdf`](paper/tsie_preprint.pdf) — *A Six-Axis State-Space Model of
 Syndrome–Formula Dynamics in Traditional Chinese Medicine: Mechanism, Reference Implementation, and
 Explicit Non-Claims*.
 

@@ -17,6 +17,8 @@ abstract: |
   formalisation and the falsification agenda, not a result.
 ---
 
+*Preprint. DOI: [10.5281/zenodo.24296397](https://doi.org/10.5281/zenodo.24296397) · Code: [github.com/Even-li316/tcm-state-dynamics](https://github.com/Even-li316/tcm-state-dynamics)*
+
 # 1. Introduction
 
 Computational TCM has converged on one architecture: a large language model (LLM), optionally augmented

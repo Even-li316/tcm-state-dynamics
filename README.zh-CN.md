@@ -2,6 +2,7 @@
 
 [![smoke](https://github.com/Even-li316/tcm-state-dynamics/actions/workflows/ci.yml/badge.svg)](https://github.com/Even-li316/tcm-state-dynamics/actions/workflows/ci.yml)
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.24296397.svg)](https://doi.org/10.5281/zenodo.24296397)
 
 **输入「证候状态 ＋ 方剂」，输出「状态轨迹 ＋ 结局判定（收敛／迁延／加重）」——而不是一段文字。**
 
@@ -24,7 +25,7 @@ TSIE 做的事小得多也具体得多：维护一个显式的**状态向量**�
 
 ## 论文
 
-预印本（PDF，6 页）：[`paper/tsie_preprint.pdf`](paper/tsie_preprint.pdf)
+预印本（6 页）：[doi:10.5281/zenodo.24296397](https://doi.org/10.5281/zenodo.24296397) · 本地副本 [`paper/tsie_preprint.pdf`](paper/tsie_preprint.pdf)
 
 ## 快速开始
 
