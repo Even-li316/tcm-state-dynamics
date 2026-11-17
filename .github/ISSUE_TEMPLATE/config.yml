@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: 讨论 / Discussions（质疑模型、提另一套映射）
+    url: https://github.com/Even-li316/tcm-state-dynamics/discussions
+    about: 不适合放进表单的想法、设计争论、文献线索，放这里。
+  - name: 先读贡献指南 / Read CONTRIBUTING first
+    url: https://github.com/Even-li316/tcm-state-dynamics/blob/main/CONTRIBUTING.md
+    about: 什么有用、什么会被拒、脱敏红线，都在这里。

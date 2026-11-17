@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Even-li316/tcm-state-dynamics/schema/external_therapy.schema.json",
+  "title": "External therapy operator (schema v1.0)",
+  "description": "One external intervention described as a parametric operator: what, where, how, how much, how often. The model deliberately has NO default mapping from these parameters to the six state axes - supplying that mapping is the contribution, and it is a claim that needs a source.",
+  "type": "object",
+  "required": ["schema_version", "modality", "params"],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "modality": {
+      "enum": ["acupuncture", "electroacupuncture", "moxibustion", "tuina", "guasha", "cupping", "scraping_other", "qigong", "other"]
+    },
+    "points": {
+      "type": "array",
+      "description": "WHO standard point codes (LI4, ST36, SP6...). Empty is acceptable for region-based manual therapy.",
+      "items": { "type": "string", "pattern": "^[A-Z]{2}[0-9]{1,2}[a-z]?$" }
+    },
+    "region": { "type": "string", "description": "For manual therapy: e.g. 足太阳膀胱经 first line, 腹部, 肩井区" },
+    "technique": {
+      "type": "string",
+      "description": "e.g. tonifying (补), reducing (泻), even (平补平泻), 一指禅推法, 滚法, 点按"
+    },
+    "params": {
+      "type": "object",
+      "required": ["duration_min", "sessions"],
+      "properties": {
+        "frequency_hz": { "type": "number", "exclusiveMinimum": 0, "description": "electroacupuncture / mechanical stimulation frequency" },
+        "intensity": { "type": "string", "description": "as reported: mA for EA, or a qualitative level (得气, 酸胀, 轻度)" },
+        "duration_min": { "type": "number", "exclusiveMinimum": 0 },
+        "sessions": { "type": "integer", "minimum": 1 },
+        "interval_days": { "type": "number", "exclusiveMinimum": 0 },
+        "temperature_c": { "type": "number", "description": "moxibustion" }
+      }
+    },
+    "target_axes": {
+      "type": "array",
+      "description": "Optional: which state axes this operator is claimed to move, and in which direction. This is the mapping the model needs.",
+      "items": {
+        "type": "object",
+        "required": ["axis", "direction"],
+        "properties": {
+          "axis": { "enum": ["wind", "cold", "summerheat", "damp", "dryness", "fire"] },
+          "direction": { "enum": ["reduce", "increase"] },
+          "gain": { "type": "number", "description": "relative strength, 0-3; state if this is an estimate" }
+        }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "required": ["kind"],
+      "properties": {
+        "kind": { "enum": ["classical_text", "textbook", "clinical_experience", "trial", "estimate"] },
+        "citation": { "type": "string" },
+        "calibrated": { "type": "boolean", "description": "false = hand-picked, true = fitted/measured with data attached" }
+      }
+    },
+    "notes": { "type": "string" }
+  },
+  "additionalProperties": false
+}

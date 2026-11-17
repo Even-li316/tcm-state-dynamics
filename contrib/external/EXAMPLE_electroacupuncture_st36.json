@@ -1,0 +1,23 @@
+{
+  "schema_version": "1.0",
+  "modality": "electroacupuncture",
+  "points": ["ST36", "LI4"],
+  "technique": "平补平泻",
+  "params": {
+    "frequency_hz": 2,
+    "intensity": "耐受为度，约 1-3 mA",
+    "duration_min": 20,
+    "sessions": 10,
+    "interval_days": 1
+  },
+  "target_axes": [
+    { "axis": "cold", "direction": "reduce", "gain": 0.4 },
+    { "axis": "damp", "direction": "reduce", "gain": 0.3 }
+  ],
+  "evidence": {
+    "kind": "estimate",
+    "citation": "示例条目：gain 为占位估计值，未标定，不可作为证据引用",
+    "calibrated": false
+  },
+  "notes": "这是一条示例，用来演示字段结构。真实贡献请把 evidence.calibrated 设为 false 并写明来源，或附上标定数据。"
+}

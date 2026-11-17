@@ -1,0 +1,113 @@
+name: 提交一条病案 / Submit a case record
+description: 一条带结局的病案（已脱敏）。不确定字段怎么填就按最接近的选，维护者会整理成 JSON。
+title: "[case] "
+labels: ["case-record", "needs-review"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **提交前请确认**：没有姓名／身份证／手机号／精确日期／住院号。年龄填区间即可。
+        不确定的字段留空，不要猜。结局不清楚就选 `unknown`。
+  - type: dropdown
+    id: source_type
+    attributes:
+      label: 来源类型
+      options:
+        - published（已发表病案／医案集／期刊）
+        - clinical（自己的临床记录，已脱敏）
+        - teaching（教学案例）
+        - classical（古典医籍原文）
+    validations:
+      required: true
+  - type: input
+    id: citation
+    attributes:
+      label: 出处（selected=published 或 classical 时必填）
+      placeholder: "例如《伤寒论》太阳病篇；或 作者. 题名. 期刊. 年. 卷(期). 页码"
+    validations:
+      required: false
+  - type: dropdown
+    id: age_band
+    attributes:
+      label: 年龄段
+      options: ["0-17", "18-39", "40-64", "65+", "未记录"]
+  - type: dropdown
+    id: sex
+    attributes:
+      label: 性别
+      options: ["F", "M", "other_or_undisclosed", "未记录"]
+  - type: input
+    id: syndrome
+    attributes:
+      label: 主证（原话照录）
+      placeholder: 风寒表实 / 暑湿困脾 / 阴虚火旺
+    validations:
+      required: true
+  - type: textarea
+    id: four_diagnostics
+    attributes:
+      label: 四诊记录（原话照录，不要改写成现代术语）
+      placeholder: "望：… 闻：… 问：… 切：…"
+    validations:
+      required: false
+  - type: textarea
+    id: formula
+    attributes:
+      label: 方药（一方一行：药名 / 君臣佐使 / 剂量）
+      placeholder: |
+        麻黄 / 君 / 9g
+        桂枝 / 臣 / 6g
+    validations:
+      required: true
+  - type: dropdown
+    id: dosage_form
+    attributes:
+      label: 剂型
+      options: ["decoction 汤", "powder 散", "pill 丸", "paste 膏", "pellet 丹", "other", "unspecified"]
+  - type: input
+    id: doses
+    attributes:
+      label: 剂数 / 诊次
+      placeholder: "例如 1 剂，1 诊而愈"
+  - type: textarea
+    id: external
+    attributes:
+      label: 同期外治（针／灸／推拿等，没有就留空）
+      placeholder: 取穴、手法、频率、时长、次数
+    validations:
+      required: false
+  - type: dropdown
+    id: resolution
+    attributes:
+      label: 结局
+      description: 不知道就选 unknown，这比猜一个"痊愈"有用
+      options:
+        - resolved 痊愈
+        - improved 好转
+        - persisting 迁延
+        - worsened 加重
+        - unknown 未记录
+    validations:
+      required: true
+  - type: input
+    id: visits
+    attributes:
+      label: 几诊而愈 / 随访多久
+      placeholder: "例如 3 诊；随访 30 天"
+  - type: textarea
+    id: note
+    attributes:
+      label: 其他说明（可选）
+    validations:
+      required: false
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: 隐私确认
+      options:
+        - label: 本条不含姓名／身份证／手机号／精确日期／住院号等任何可识别信息
+          required: true
+        - label: 这不是 AI 生成或事后重构的假病案
+          required: true
+        - label: 我同意按 CC BY 4.0 分享这条记录
+          required: true

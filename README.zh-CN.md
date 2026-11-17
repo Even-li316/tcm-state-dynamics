@@ -72,10 +72,34 @@ Python 3.9+、numpy、matplotlib。无 GPU、无权重、无下载。
 - **三档分明是规则写出来的结果**，本身不构成证据；不能错的模型不能证明任何事。
 - **不是医疗器械**：不做诊断、不给方、不给剂量，请勿用于病人。
 
+## 参与：这个项目缺的是数据，不是代码
+
+引擎已经够用了。它靠自己做不到的是**攒出真实的病程**——一次干预下，状态用了多久才收敛。
+如果你看过病人、带过教、读过医案集，你就是这个仓库需要的贡献者。
+
+| 花多久 | 路径 | 用途 |
+|---|---|---|
+| 2 分钟 | [提交一条病案](https://github.com/Even-li316/tcm-state-dynamics/issues/new?template=case_record.yml) | 一次病程：证候 → 方 → 结局 |
+| 2 分钟 | [提交一个外治算子](https://github.com/Even-li316/tcm-state-dynamics/issues/new?template=external_therapy.yml) | 针／灸／推拿：取穴、手法、频率、时长、次数 |
+| 10 分钟 | 在 `contrib/` 下加 JSON 提 PR | 一批 |
+| 不限 | [Discussions](https://github.com/Even-li316/tcm-state-dynamics/discussions) | 质疑模型、提另一套映射 |
+
+最需要什么：①**带结局的病案**（痊愈／好转／迁延／加重，几诊而愈）——没有结局的记录无法证伪任何东西；
+②**带映射的外治算子**——引擎里没有任何"取穴＋频率→六气"的内置映射，能带出处给出这个映射，那就是贡献；
+③药材条目（现 43 味，四气五味归经趋向药力加出处）；④`k0 / M / α` 的拟合值——交值和脚本，不必交数据。
+
+硬规矩：源头脱敏（不要姓名／身份证／手机号／精确日期）；已发表病案给出处；宁可写 `unknown` 不要编结局；
+不许交 AI 生成的病案。校验脚本查 schema + 跑隐私扫描，CI 在每个 PR 上执行。全文见
+[CONTRIBUTING.zh-CN.md](CONTRIBUTING.zh-CN.md)。
+
 ## 目录
 
 ```
 engine/tcm_energy_sim.py   全部模型 + 出图
+engine/external_therapy.py 针／灸／推拿的算子契约
+schema/                    病案与外治算子的 JSON schema
+contrib/                   已收到的记录（目前只有示例）
+tools/validate_contribution.py  schema + 隐私扫描，CI 执行
 demo/tcm_engine_demo.html  单文件交互演示（选状态→选方→看轨迹）
 figures/                   生成图与本 README 的动图
 docs/model.md              方程、符号、规则表

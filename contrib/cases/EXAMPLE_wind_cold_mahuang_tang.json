@@ -1,0 +1,41 @@
+{
+  "schema_version": "1.0",
+  "source": {
+    "type": "published",
+    "citation": "《伤寒论》太阳病篇，麻黄汤证（classical text, public domain）"
+  },
+  "demographics": {
+    "age_band": "18-39",
+    "sex": "M"
+  },
+  "four_diagnostics": {
+    "inspection": "（示例条目，非真实病案）恶寒发热，无汗",
+    "inquiry": "头痛，身疼，腰痛，骨节疼痛，喘",
+    "palpation": "脉浮紧"
+  },
+  "syndrome": {
+    "primary": "风寒表实",
+    "six_qi": [
+      { "axis": "wind", "direction": "excess", "severity": 0.8 },
+      { "axis": "cold", "direction": "excess", "severity": 0.9 }
+    ]
+  },
+  "formula": {
+    "name": "麻黄汤",
+    "herbs": [
+      { "herb": "麻黄", "pinyin": "ma huang", "role": "jun", "dose_g": 9 },
+      { "herb": "桂枝", "pinyin": "gui zhi", "role": "chen", "dose_g": 6 },
+      { "herb": "杏仁", "pinyin": "xing ren", "role": "zuo", "dose_g": 6 },
+      { "herb": "甘草", "pinyin": "gan cao", "role": "shi", "dose_g": 3 }
+    ],
+    "dosage_form": "decoction",
+    "doses": 1,
+    "schedule": "温服，覆取微似汗"
+  },
+  "outcome": {
+    "resolution": "resolved",
+    "visits_to_resolution": 1,
+    "note": "示例条目：仅演示字段填法，不代表任何真实病例"
+  },
+  "contributor_confidence": "medium"
+}

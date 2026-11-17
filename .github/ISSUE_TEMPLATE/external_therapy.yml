@@ -1,0 +1,119 @@
+name: 提交一个外治算子 / Submit an external-therapy operator
+description: 针、电针、灸、推拿、刮痧、拔罐——按参数描述。能给出"动哪条状态轴、多强"的映射最有价值。
+title: "[external] "
+labels: ["external-therapy", "needs-review"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        模型里**没有**内置的"取穴＋频率 → 六气向量"映射。所以有两件事可以交：
+        ①只有参数（也算贡献，先攒着）；②参数 + 你认为的映射（更有价值，请写出处）。
+
+        写了 `gain` 就是一条断言，请把 `calibrated` 设为 false 并在出处里说明依据。
+  - type: dropdown
+    id: modality
+    attributes:
+      label: 疗法
+      options:
+        - acupuncture 毫针
+        - electroacupuncture 电针
+        - moxibustion 灸
+        - tuina 推拿
+        - guasha 刮痧
+        - cupping 拔罐
+        - other
+    validations:
+      required: true
+  - type: input
+    id: points
+    attributes:
+      label: 取穴（WHO 标准代码，空格分隔）
+      placeholder: ST36 LI4 SP6
+    validations:
+      required: false
+  - type: input
+    id: region
+    attributes:
+      label: 部位（推拿／刮痧用）
+      placeholder: 足太阳膀胱经第一侧线 / 肩井区
+    validations:
+      required: false
+  - type: input
+    id: technique
+    attributes:
+      label: 手法
+      placeholder: 补 / 泻 / 平补平泻 / 一指禅推法 / 点按
+    validations:
+      required: false
+  - type: input
+    id: frequency
+    attributes:
+      label: 频率 Hz（电针／机械刺激）
+      placeholder: "2"
+    validations:
+      required: false
+  - type: input
+    id: intensity
+    attributes:
+      label: 强度（按原文写：mA 或 得气／酸胀／轻度）
+      placeholder: 耐受为度，约 1-3 mA
+    validations:
+      required: false
+  - type: input
+    id: duration
+    attributes:
+      label: 单次时长（分钟）
+      placeholder: "20"
+    validations:
+      required: true
+  - type: input
+    id: sessions
+    attributes:
+      label: 次数
+      placeholder: "10"
+    validations:
+      required: true
+  - type: input
+    id: interval
+    attributes:
+      label: 间隔（天）
+      placeholder: "1"
+    validations:
+      required: false
+  - type: textarea
+    id: target_axes
+    attributes:
+      label: 你认为它动哪条状态轴、方向与相对强度（可留空）
+      placeholder: |
+        cold  reduce  0.4
+        damp  reduce  0.3
+    validations:
+      required: false
+  - type: dropdown
+    id: evidence_kind
+    attributes:
+      label: 依据类型
+      options:
+        - classical_text 古典医籍
+        - textbook 教材／规范
+        - clinical_experience 临床经验
+        - trial 试验／研究
+        - estimate 估计（尚无依据）
+    validations:
+      required: true
+  - type: input
+    id: citation
+    attributes:
+      label: 出处
+      placeholder: 书名／论文／指南，能给到页码或 DOI 最好
+    validations:
+      required: false
+  - type: checkboxes
+    id: attest
+    attributes:
+      label: 确认
+      options:
+        - label: 上面给出的 gain 若为估计值，我已明确标注，没有伪装成标定值
+          required: true
+        - label: 我同意按 CC BY 4.0 分享这份参数集
+          required: true

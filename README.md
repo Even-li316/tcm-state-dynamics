@@ -90,10 +90,44 @@ of the rule structure, the threshold is not (`experiments/sensitivity.py`, Figur
   cannot be wrong is not evidence — which is why the roadmap below is about fitting and falsification.
 - **Not a medical device.** No diagnosis, no prescription, no dose advice. Do not use it on patients.
 
+## Contribute — this project is waiting for data, not code
+
+The engine is done enough. What it cannot do without help is **collect a real course**: how long a state took
+to resolve, under which intervention. If you have seen patients, taught cases, or read case collections, you
+are the contributor this repository needs.
+
+Four ways in. The two issue forms need no Git at all:
+
+| Effort | Route | What it is for |
+|---|---|---|
+| 2 min | [Submit a case record](https://github.com/Even-li316/tcm-state-dynamics/issues/new?template=case_record.yml) | one episode: syndrome → formula → outcome |
+| 2 min | [Submit an external-therapy operator](https://github.com/Even-li316/tcm-state-dynamics/issues/new?template=external_therapy.yml) | acupuncture / moxibustion / tuina: points, technique, frequency, duration, sessions |
+| 10 min | Pull request with a JSON file under `contrib/` | a batch |
+| open-ended | [Discussions](https://github.com/Even-li316/tcm-state-dynamics/discussions) | argue with the model, propose another mapping |
+
+What is most valuable, in order:
+
+1. **Case records that have an outcome** — resolved / improved / persisting / worsened, and how many visits.
+   Without an outcome a record cannot falsify anything.
+2. **External-therapy operators with a mapping.** The engine has *no* built-in mapping from "ST36, 2 Hz,
+   20 min" to the six axes — supplying that mapping, with a source, is the contribution
+   (`engine/external_therapy.py` is the contract, `contrib/external/` is where they live).
+3. **Herb-table entries** — 43 today, each needs four-nature, five-flavour, channels, tendency, potency, source.
+4. **Parameter fits** for `k0`, `M`, `α` — send the values and the script, not the data.
+
+Hard rules, short version: de-identify at the source (no names, ID numbers, phone numbers, exact dates);
+published cases need a citation; do not invent outcomes — `unknown` is a valid answer; do not submit
+AI-generated cases. `tools/validate_contribution.py` enforces the schema and runs a privacy lint, and CI runs
+it on every pull request. Full text: [CONTRIBUTING.md](CONTRIBUTING.md) · [中文](CONTRIBUTING.zh-CN.md).
+
 ## Repo layout
 
 ```
 engine/tcm_energy_sim.py   the whole model + figure generation
+engine/external_therapy.py operator contract for acupuncture / moxibustion / tuina
+schema/                    JSON schemas for contributed case records and operators
+contrib/                   contributed records (examples only, so far)
+tools/validate_contribution.py  schema + privacy lint, run in CI
 demo/tcm_engine_demo.html  interactive single-file demo (choose state → formula → watch trajectory)
 figures/                   generated figures + this README's GIF
 docs/model.md              equations, symbols, rule table
