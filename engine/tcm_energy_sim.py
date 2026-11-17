@@ -130,17 +130,23 @@ def _M():
 # 剂型 = 动力学时间常数（古人已把"释放速度"编码在剂型里）
 DOSE_TAU = {"汤": 1.0, "散": 1.5, "丸": 4.0, "膏": 6.0, "丹": 3.0}
 
+# ---- 可调常数（敏感性分析用：experiments/sensitivity.py 直接改这几个值）----
+K0_BASE = 0.05     # 自愈力基线
+M_SCALE = 1.0      # 病机传变矩阵整体缩放
+ALPHA = 1.1        # 药力增益
 
-def simulate(E0, Dnet, tonic, warm=0.0, form="汤", n_dose=10, T_dose=1.0, T=10.0, dt=0.02, alpha=1.1):
+
+def simulate(E0, Dnet, tonic, warm=0.0, form="汤", n_dose=10, T_dose=1.0, T=10.0, dt=0.02, alpha=None):
     """E' = -k0·E + M·E + α·Dnet
     规则：
       R1 药力线性叠加（α·Dnet）
       R2 误治助邪：若药力与病势同向（Dnet·E>0）→ 传变×1.8、自愈×0.5
       R3 寒凉抑遏：里有寒、湿未解而用大剂寒凉 → 反增寒湿
     """
+    alpha = ALPHA if alpha is None else alpha
     tau = DOSE_TAU.get(form, 1.0)
-    M = _M() * (1.8 if float(np.dot(Dnet, E0)) > 0 else 1.0)
-    k0 = (0.05 + tonic) * (0.5 if float(np.dot(Dnet, E0)) > 0 else 1.0)
+    M = _M() * M_SCALE * (1.8 if float(np.dot(Dnet, E0)) > 0 else 1.0)
+    k0 = (K0_BASE + tonic) * (0.5 if float(np.dot(Dnet, E0)) > 0 else 1.0)
     idx = {k: i for i, k in enumerate(AXES)}
     E = E0.astype(float).copy()
     D_eff = Dnet.copy()

@@ -24,6 +24,12 @@ converge, persist, or get worse — and when?*
 | Parameters written out in plain Python, every step traceable | A calibrated clinical predictor |
 | A reference implementation to argue about | A medical device or a dosing tool |
 
+## Paper
+
+Preprint (PDF, 6 pages): [`paper/tsie_preprint.pdf`](paper/tsie_preprint.pdf) — *A Six-Axis State-Space Model of
+Syndrome–Formula Dynamics in Traditional Chinese Medicine: Mechanism, Reference Implementation, and
+Explicit Non-Claims*.
+
 ## Quick start
 
 ```bash
@@ -68,6 +74,10 @@ Residual imbalance after 10 doses, normalised to the pre-treatment state (`1.0` 
 The three arms separate cleanly. **That is a statement about internal consistency of the rules, not
 about clinical validity** — see the next section.
 
+Perturbing all five free constants by ±20% (lognormal, 300 draws, seed 20261117) preserves the ordering in
+**90.7%** of draws, while the arbitrary `matched < 0.5` cut survives only 48.3% — the ordering is a property
+of the rule structure, the threshold is not (`experiments/sensitivity.py`, Figure 3 of the paper).
+
 ## Honest limits (read before citing this)
 
 - **Every coefficient is hand-set** from qualitative textbook rules (four natures, five flavours, channel
@@ -87,6 +97,8 @@ demo/tcm_engine_demo.html  interactive single-file demo (choose state → formul
 figures/                   generated figures + this README's GIF
 docs/model.md              equations, symbols, rule table
 tests/smoke.py             one-command sanity check
+experiments/sensitivity.py parameter-perturbation study
+paper/tsie_preprint.pdf    preprint
 out/                       engine output (generated on first run)
 ```
 
