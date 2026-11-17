@@ -1,5 +1,8 @@
 # TSIE — TCM State-Dynamics Inference Engine
 
+[![smoke](https://github.com/Even-li316/tcm-state-dynamics/actions/workflows/ci.yml/badge.svg)](https://github.com/Even-li316/tcm-state-dynamics/actions/workflows/ci.yml)
+[![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 **Give it a syndrome state and a formula; it returns a state trajectory and an outcome class — not a paragraph of text.**
 
 Most "AI + TCM" work today is text in, text out: an LLM writes a plausible-sounding prescription.

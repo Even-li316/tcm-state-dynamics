@@ -1,5 +1,8 @@
 # TSIE · 中医状态动力学推演引擎
 
+[![smoke](https://github.com/Even-li316/tcm-state-dynamics/actions/workflows/ci.yml/badge.svg)](https://github.com/Even-li316/tcm-state-dynamics/actions/workflows/ci.yml)
+[![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 **输入「证候状态 ＋ 方剂」，输出「状态轨迹 ＋ 结局判定（收敛／迁延／加重）」——而不是一段文字。**
 
 现在大多数「AI＋中医」是文本进、文本出：大模型写出一张看起来合理的方子。
